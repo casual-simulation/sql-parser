@@ -1,5 +1,5 @@
 use wasm_bindgen_test::*;
-use sql_parser_wasm::{ parse_sql, JavaScriptVisitor };
+use sql_parser_wasm::{ parse_sql };
 
 #[wasm_bindgen_test]
 fn test_parse_simple_select() {
@@ -54,8 +54,13 @@ fn test_parse_simple_select() {
     let first_ident = name_array.get(0);
     assert!(first_ident.is_object());
 
+    // keys of first_ident should include "value"
     let first_ident = js_sys::Object::from(first_ident);
 
-    let value = js_sys::Reflect::get(&first_ident, &"value".into()).unwrap();
+    let ident = js_sys::Reflect::get(&first_ident, &"Identifier".into()).unwrap();
+    // let keys = js_sys::Object::keys(&first_ident);
+    // web_sys::console::log_1(&keys);
+
+    let value = js_sys::Reflect::get(&ident, &"value".into()).unwrap();
     assert_eq!(value.as_string().unwrap(), "users");
 }

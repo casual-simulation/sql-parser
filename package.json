@@ -2,6 +2,7 @@
   "name": "@casual-simulation/sql-parser",
   "version": "0.1.0",
   "description": "A SQL parser library with WASM and TypeScript bindings",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.esm.js",
@@ -16,7 +17,8 @@
     "build:ts": "npm run clean && tsc",
     "clean": "rimraf dist/",
     "dev": "tsc --watch",
-    "test": "jest",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll",
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "npm run build"
