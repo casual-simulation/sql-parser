@@ -1,0 +1,38 @@
+[package]
+name = "sql-parser"
+version = "0.1.0"
+edition = "2021"
+authors = ["Casual Simulation"]
+description = "A SQL Parser with WASM and JavaScript bindings"
+license = "MIT"
+repository = "https://github.com/casual-simulation/sql-parser"
+readme = "README.md"
+keywords = ["sql", "parser", "wasm", "javascript"]
+categories = ["parsing", "wasm"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Core dependencies - none needed for basic functionality yet
+
+[dependencies.wasm-bindgen]
+version = "0.2"
+optional = true
+
+[dependencies.js-sys]
+version = "0.3"
+optional = true
+
+[dependencies.web-sys]
+version = "0.3"
+optional = true
+
+[features]
+default = []
+wasm = ["wasm-bindgen", "js-sys", "web-sys"]
+
+[profile.release]
+# Optimize for size for WASM builds
+opt-level = "s"
+lto = true
