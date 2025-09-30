@@ -3,7 +3,7 @@
 //! These tests verify the public API and ensure the library works
 //! correctly when used as an external dependency.
 
-use sql_parser::{parse_sql, SqlParseError, StatementType};
+use sql_parser_wasm::{parse_sql, SqlParseError, StatementType};
 
 #[test]
 fn test_public_api_basic_usage() {

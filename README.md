@@ -21,14 +21,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-sql-parser = "0.1"
+sql-parser-wasm = "0.1"
 ```
 
 For WASM features:
 
 ```toml
 [dependencies]
-sql-parser = { version = "0.1", features = ["wasm"] }
+sql-parser-wasm = { version = "0.1", features = ["wasm"] }
 ```
 
 ## Usage
@@ -36,7 +36,7 @@ sql-parser = { version = "0.1", features = ["wasm"] }
 ### Basic Rust Usage
 
 ```rust
-use sql_parser::{parse_sql, StatementType};
+use sql_parser_wasm::{parse_sql, StatementType};
 
 fn main() {
     let sql = "SELECT * FROM users WHERE id = 1";

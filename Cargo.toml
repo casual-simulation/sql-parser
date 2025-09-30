@@ -1,5 +1,5 @@
 [package]
-name = "sql-parser"
+name = "sql-parser-wasm"
 version = "0.1.0"
 edition = "2021"
 authors = ["Casual Simulation"]
