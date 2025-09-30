@@ -31,7 +31,7 @@ version = "0.3"
 optional = true
 
 [features]
-default = []
+default = ["wasm"]
 wasm = ["wasm-bindgen", "js-sys", "web-sys", "serde-wasm-bindgen"]
 
 [profile.release]
