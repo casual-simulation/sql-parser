@@ -23,7 +23,7 @@ use sqlparser::dialect::{
     ClickHouseDialect, HiveDialect
 };
 use sqlparser::parser::{Parser, ParserError};
-use sqlparser::ast::{Statement, Query, ObjectName, TableFactor, Expr, Value, Visitor};
+use sqlparser::ast::{Statement, Query, ObjectName, TableFactor, Expr, Value, Visitor, Visit};
 
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
@@ -257,4 +257,10 @@ impl Visitor for SQLVisitor {
     fn post_visit_value(&mut self, _value: &Value) -> ControlFlow<Self::Break> { 
         SQLVisitor::call(&self.post_visit_value, &serde_wasm_bindgen::to_value(_value).unwrap())
     }
+}
+
+#[wasm_bindgen]
+pub fn visit(visitor: &mut SQLVisitor, statement: &JsValue) {
+    let statement: Statement = serde_wasm_bindgen::from_value(statement.clone()).unwrap();
+    let _ = statement.visit(visitor);
 }
