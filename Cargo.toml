@@ -30,6 +30,9 @@ optional = true
 version = "0.3"
 optional = true
 
+[dev-dependencies]
+wasm-bindgen-test = "0.3.0"
+
 [features]
 default = ["wasm"]
 wasm = ["wasm-bindgen", "js-sys", "web-sys", "serde-wasm-bindgen"]

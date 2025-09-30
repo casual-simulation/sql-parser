@@ -10,7 +10,7 @@
 //!
 //! let sql = "SELECT * FROM users WHERE id = 1";
 //! let dialect = "postgresql";
-//! let result = parse_sql(dialect, sql);
+//! let result = parse_sql(dialect.into(), sql.into());
 //! assert!(result.is_ok());
 //! ```
 
@@ -122,6 +122,13 @@ pub fn get_supported_dialects() -> js_sys::Array {
     }
     js_array
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+
+    
+// }
 
 // #[cfg(test)]
 // mod tests {
