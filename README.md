@@ -1,68 +1,96 @@
-# sql-parser
+# SQL Parser
 
-A SQL Parser with WASM and JavaScript bindings
-
-## Overview
-
-This library provides functionality to parse SQL statements and convert them into structured data that can be used for analysis, transformation, or execution. It's designed to work both in native Rust environments and in web browsers via WebAssembly.
+A Rust library that uses the `sqlparser` crate to parse SQL statements and convert them to JSON representation.
 
 ## Features
 
-- Parse common SQL statements (SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER)
-- Support for WebAssembly compilation for browser usage
-- JavaScript bindings for easy integration in web applications
-- Comprehensive error handling with position information
-- Zero-copy parsing where possible
-- Lightweight and fast
-
-## Installation
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-sql-parser-wasm = "0.1"
-```
-
-For WASM features:
-
-```toml
-[dependencies]
-sql-parser-wasm = { version = "0.1", features = ["wasm"] }
-```
+- Parse SQL statements using various SQL dialects
+- Convert parsed Abstract Syntax Tree (AST) to JSON
+- Support for 10+ SQL dialects including PostgreSQL, MySQL, SQLite, BigQuery, and more
+- Comprehensive error handling
 
 ## Usage
 
-### Basic Rust Usage
-
 ```rust
-use sql_parser_wasm::{parse_sql, StatementType};
+use sql_parser_wasm::parse_sql;
 
 fn main() {
-    let sql = "SELECT * FROM users WHERE id = 1";
+    let sql = "SELECT id, name FROM users WHERE active = true";
+    let dialect = "postgresql";
     
-    match parse_sql(sql) {
-        Ok(statement) => {
-            println!("Statement type: {:?}", statement.statement_type);
-            println!("Raw SQL: {}", statement.raw_sql);
+    match parse_sql(dialect, sql) {
+        Ok(json_ast) => {
+            println!("Parsed AST: {}", json_ast);
         }
         Err(error) => {
-            println!("Parse error: {}", error);
+            eprintln!("Parse error: {}", error);
         }
     }
 }
 ```
 
-### Supported Statement Types
+## Supported Dialects
 
-- `SELECT` - Data retrieval queries
-- `INSERT` - Data insertion statements
-- `UPDATE` - Data modification statements
-- `DELETE` - Data deletion statements
-- `CREATE` - Schema creation statements (tables, indexes, etc.)
-- `DROP` - Schema deletion statements
-- `ALTER` - Schema modification statements
-- `Unknown` - Other statements not explicitly categorized
+- `generic` - Generic SQL dialect
+- `postgresql` / `postgres` - PostgreSQL
+- `mysql` - MySQL
+- `sqlite` - SQLite
+- `mssql` / `sqlserver` - Microsoft SQL Server
+- `snowflake` - Snowflake
+- `redshift` - Amazon Redshift
+- `bigquery` - Google BigQuery
+- `clickhouse` - ClickHouse
+- `hive` - Apache Hive
+
+## API
+
+### `parse_sql(dialect: &str, sql: &str) -> Result<String, String>`
+
+Parses a SQL statement using the specified dialect and returns the AST as a pretty-printed JSON string.
+
+**Parameters:**
+- `dialect` - The SQL dialect to use for parsing
+- `sql` - The SQL statement to parse
+
+**Returns:**
+- `Ok(String)` - JSON representation of the parsed AST
+- `Err(String)` - Error message if parsing fails
+
+## Examples
+
+### Basic SELECT
+```rust
+let result = parse_sql("postgresql", "SELECT * FROM users");
+// Returns JSON representation of the SELECT statement AST
+```
+
+### Complex Query
+```rust
+let sql = r#"
+    SELECT u.name, COUNT(o.id) as order_count
+    FROM users u
+    LEFT JOIN orders o ON u.id = o.user_id
+    WHERE u.active = true
+    GROUP BY u.name
+    HAVING COUNT(o.id) > 5
+    ORDER BY order_count DESC
+    LIMIT 10
+"#;
+
+let result = parse_sql("mysql", sql);
+// Returns detailed JSON AST including joins, aggregations, etc.
+```
+
+### Error Handling
+```rust
+// Invalid SQL
+let result = parse_sql("postgresql", "SELEC * FRO users");
+assert!(result.is_err());
+
+// Invalid dialect
+let result = parse_sql("invalid", "SELECT * FROM users");
+assert!(result.is_err());
+```
 
 ## Building
 
