@@ -13,13 +13,17 @@
 //! let result = parse_sql(dialect.into(), sql.into());
 //! assert!(result.is_ok());
 //! ```
+//! 
+
+use core::ops::ControlFlow;
 
 use sqlparser::dialect::{
     Dialect, GenericDialect, PostgreSqlDialect, MySqlDialect, SQLiteDialect,
     MsSqlDialect, SnowflakeDialect, RedshiftSqlDialect, BigQueryDialect,
-    ClickHouseDialect, HiveDialect,
+    ClickHouseDialect, HiveDialect
 };
 use sqlparser::parser::{Parser, ParserError};
+use sqlparser::ast::{Statement, Query, ObjectName, TableFactor, Expr, Value, Visitor};
 
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
@@ -123,156 +127,134 @@ pub fn get_supported_dialects() -> js_sys::Array {
     js_array
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
 
+#[cfg(feature = "wasm")]
+#[wasm_bindgen]
+pub struct SQLVisitor {
+    pre_visit_query: js_sys::Function,
+    post_visit_query: js_sys::Function,
+
+    pre_visit_relation: js_sys::Function,
+    post_visit_relation: js_sys::Function,
+
+    pre_visit_table_factor: js_sys::Function,
+    post_visit_table_factor: js_sys::Function,
+
+    pre_visit_expr: js_sys::Function,
+    post_visit_expr: js_sys::Function,
+
+    pre_visit_statement: js_sys::Function,
+    post_visit_statement: js_sys::Function,
     
-// }
+    pre_visit_value: js_sys::Function,
+    post_visit_value: js_sys::Function,
+}
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+fn get_function(config: &js_sys::Object, name: &str) -> js_sys::Function {
+    let func = js_sys::Reflect::get(config, &JsValue::from_str(name)).unwrap_or(JsValue::UNDEFINED);
+    func.unchecked_into()
+}
 
-//     #[test]
-//     fn test_parse_simple_select() {
-//         let result = parse_sql("postgresql", "SELECT * FROM users");
-//         assert!(result.is_ok());
-        
-//         let json = result.unwrap();
-//         assert!(json.contains("Select"));
-//         assert!(json.contains("users"));
-//     }
+#[wasm_bindgen]
+impl SQLVisitor {
 
-//     #[test]
-//     fn test_parse_select_with_where() {
-//         let result = parse_sql("postgresql", "SELECT id, name FROM users WHERE age > 18");
-//         assert!(result.is_ok());
-        
-//         let json = result.unwrap();
-//         assert!(json.contains("Select"));
-//         assert!(json.contains("users"));
-//         assert!(json.contains("age"));
-//     }
+    #[wasm_bindgen(constructor)]
+    pub fn create_visitor(config: js_sys::Object) -> SQLVisitor {
+        SQLVisitor {
+            pre_visit_query: get_function(&config, "pre_visit_query"),
+            post_visit_query: get_function(&config, "post_visit_query"),
+            pre_visit_relation: get_function(&config, "pre_visit_relation"),
+            post_visit_relation: get_function(&config, "post_visit_relation"),
+            pre_visit_table_factor: get_function(&config, "pre_visit_table_factor"),
+            post_visit_table_factor: get_function(&config, "post_visit_table_factor"),
+            pre_visit_expr: get_function(&config, "pre_visit_expr"),
+            post_visit_expr: get_function(&config, "post_visit_expr"),
+            pre_visit_statement: get_function(&config, "pre_visit_statement"),
+            post_visit_statement: get_function(&config, "post_visit_statement"),
+            pre_visit_value: get_function(&config, "pre_visit_value"),
+            post_visit_value: get_function(&config, "post_visit_value")
+        }
+    }
 
-//     #[test]
-//     fn test_parse_insert_statement() {
-//         let result = parse_sql("mysql", "INSERT INTO users (name, age) VALUES ('John', 25)");
-//         assert!(result.is_ok());
-        
-//         let json = result.unwrap();
-//         assert!(json.contains("Insert"));
-//         assert!(json.contains("users"));
-//         assert!(json.contains("John"));
-//     }
+    fn call(func: &js_sys::Function, value: &JsValue) -> ControlFlow<<SQLVisitor as Visitor>::Break> {
+        if func.is_undefined() || func.is_null() {
+            return ControlFlow::Continue(());
+        }
+        let res = func.call1(&JsValue::NULL, value).unwrap();
+        SQLVisitor::break_or_continue(res)
+    }
 
-//     #[test]
-//     fn test_parse_update_statement() {
-//         let result = parse_sql("sqlite", "UPDATE users SET age = 26 WHERE name = 'John'");
-//         assert!(result.is_ok());
-        
-//         let json = result.unwrap();
-//         assert!(json.contains("Update"));
-//         assert!(json.contains("users"));
-//     }
+    fn break_or_continue(res: JsValue) -> ControlFlow<<SQLVisitor as Visitor>::Break> {
+        if res.is_undefined() || res.is_null() || res.as_bool() == Some(true) {
+            ControlFlow::Continue(())
+        } else {
+            ControlFlow::Break(res)
+        }
+    }
+}
 
-//     #[test]
-//     fn test_parse_delete_statement() {
-//         let result = parse_sql("generic", "DELETE FROM users WHERE age < 18");
-//         assert!(result.is_ok());
-        
-//         let json = result.unwrap();
-//         assert!(json.contains("Delete"));
-//         assert!(json.contains("users"));
-//     }
+impl Visitor for SQLVisitor {
+    type Break = JsValue;
 
-//     #[test]
-//     fn test_parse_invalid_sql() {
-//         let result = parse_sql("postgresql", "SELEC * FRO users");
-//         assert!(result.is_err());
-        
-//         let error = result.unwrap_err();
-//         assert!(error.contains("Parse error"));
-//     }
+    // Provided methods
+    fn pre_visit_query(&mut self, _query: &Query) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.pre_visit_query, &serde_wasm_bindgen::to_value(_query).unwrap())
+    }
 
-//     #[test]
-//     fn test_invalid_dialect() {
-//         let result = parse_sql("invalid_dialect", "SELECT * FROM users");
-//         assert!(result.is_err());
-        
-//         let error = result.unwrap_err();
-//         assert!(error.contains("Unsupported dialect"));
-//     }
+    fn post_visit_query(&mut self, _query: &Query) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.post_visit_query, &serde_wasm_bindgen::to_value(_query).unwrap())
+    }
 
-//     #[test]
-//     fn test_dialect_case_insensitive() {
-//         let result1 = parse_sql("PostgreSQL", "SELECT * FROM users");
-//         let result2 = parse_sql("MYSQL", "SELECT * FROM users");
-        
-//         assert!(result1.is_ok());
-//         assert!(result2.is_ok());
-//     }
+    fn pre_visit_relation(
+        &mut self,
+        _relation: &ObjectName,
+    ) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.pre_visit_relation, &serde_wasm_bindgen::to_value(_relation).unwrap())
+    }
+    fn post_visit_relation(
+        &mut self,
+        _relation: &ObjectName,
+    ) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.post_visit_relation, &serde_wasm_bindgen::to_value(_relation).unwrap())
+    }
+    fn pre_visit_table_factor(
+        &mut self,
+        _table_factor: &TableFactor,
+    ) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.pre_visit_table_factor, &serde_wasm_bindgen::to_value(_table_factor).unwrap())
+    }
+    fn post_visit_table_factor(
+        &mut self,
+        _table_factor: &TableFactor,
+    ) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.post_visit_table_factor, &serde_wasm_bindgen::to_value(_table_factor).unwrap())
+    }
+    fn pre_visit_expr(&mut self, _expr: &Expr) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.pre_visit_expr, &serde_wasm_bindgen::to_value(_expr).unwrap())
+     }
+    fn post_visit_expr(&mut self, _expr: &Expr) -> ControlFlow<Self::Break> {
+        SQLVisitor::call(&self.post_visit_expr, &serde_wasm_bindgen::to_value(_expr).unwrap())
+    }
 
-//     #[test]
-//     fn test_complex_query() {
-//         let sql = r#"
-//             SELECT u.id, u.name, p.title
-//             FROM users u
-//             JOIN posts p ON u.id = p.user_id
-//             WHERE u.age > 18 AND p.published = true
-//             ORDER BY u.name
-//             LIMIT 10
-//         "#;
-        
-//         let result = parse_sql("postgresql", sql);
-//         assert!(result.is_ok());
-        
-//         let json = result.unwrap();
-//         println!("Complex query JSON: {}", json);
-//         assert!(json.contains("Select"));
-//         // Note: The exact structure names may vary, so we test for presence of key elements
-//         assert!(json.contains("users"));
-//         assert!(json.contains("posts"));
-//         assert!(json.contains("published"));
-//     }
+    fn pre_visit_statement(
+        &mut self,
+        _statement: &Statement,
+    ) -> ControlFlow<Self::Break> { 
+        SQLVisitor::call(&self.pre_visit_statement, &serde_wasm_bindgen::to_value(_statement).unwrap())
+    }
 
-//     #[test]
-//     fn test_json_conversion_for_wasm() {
-//         // Test that our JSON conversion works correctly for WASM compatibility
-//         let result = parse_sql("postgresql", "SELECT id, name FROM users WHERE active = true");
-//         assert!(result.is_ok());
+    fn post_visit_statement(
+        &mut self,
+        _statement: &Statement,
+    ) -> ControlFlow<Self::Break> { 
+        SQLVisitor::call(&self.post_visit_statement, &serde_wasm_bindgen::to_value(_statement).unwrap())
+    }
 
-//         let json_string = result.unwrap();
-        
-//         // Parse back to ensure it's valid JSON
-//         let parsed: serde_json::Value = serde_json::from_str(&json_string).unwrap();
-        
-//         // Should be an array
-//         assert!(parsed.is_array());
-        
-//         // Should contain our expected elements
-//         let json_text = serde_json::to_string(&parsed).unwrap();
-//         assert!(json_text.contains("Select"));
-//         assert!(json_text.contains("users"));
-//         assert!(json_text.contains("active"));
-//     }
+    fn pre_visit_value(&mut self, _value: &Value) -> ControlFlow<Self::Break> { 
+        SQLVisitor::call(&self.pre_visit_value, &serde_wasm_bindgen::to_value(_value).unwrap())
+    }
 
-//     #[test]
-//     fn test_supported_dialects_coverage() {
-//         // Test that all our supported dialects actually work
-//         let test_sql = "SELECT 1 as test_column";
-//         let dialects = vec![
-//             "generic", "postgresql", "postgres", "mysql", "sqlite", 
-//             "mssql", "sqlserver", "snowflake", "redshift", "bigquery", 
-//             "clickhouse", "hive"
-//         ];
-
-//         for dialect in dialects {
-//             let result = parse_sql(dialect, test_sql);
-//             assert!(result.is_ok(), "Dialect '{}' should work", dialect);
-            
-//             let json = result.unwrap();
-//             assert!(json.contains("Select"), "Result for dialect '{}' should contain Select", dialect);
-//         }
-//     }
-// }
+    fn post_visit_value(&mut self, _value: &Value) -> ControlFlow<Self::Break> { 
+        SQLVisitor::call(&self.post_visit_value, &serde_wasm_bindgen::to_value(_value).unwrap())
+    }
+}
