@@ -132,7 +132,89 @@ cargo run --example basic_usage
 
 ## Development
 
-### Running Tests
+### WebAssembly (WASM) Support
+
+This library also supports WebAssembly for use in web browsers and Node.js environments.
+
+### Building for WASM
+
+```bash
+# Install wasm-pack if not already installed
+cargo install wasm-pack
+
+# Build for web
+wasm-pack build --target web --features wasm --out-dir pkg
+
+# Or use the provided build scripts
+./build-wasm.sh        # Linux/macOS
+build-wasm.bat         # Windows
+```
+
+### JavaScript API
+
+The WASM build provides three main functions:
+
+#### `parse_sql_wasm(dialect, sql)`
+Returns the parsed AST as a JavaScript object:
+
+```javascript
+import init, { parse_sql_wasm } from './pkg/sql_parser_wasm.js';
+
+await init();
+
+try {
+    const ast = parse_sql_wasm("postgresql", "SELECT * FROM users");
+    console.log("Parsed AST:", ast);
+} catch (error) {
+    console.error("Parse error:", error);
+}
+```
+
+#### `parse_sql_json(dialect, sql)`
+Returns the parsed AST as a JSON string:
+
+```javascript
+import { parse_sql_json } from './pkg/sql_parser_wasm.js';
+
+try {
+    const jsonString = parse_sql_json("postgresql", "SELECT * FROM users");
+    const ast = JSON.parse(jsonString);
+    console.log("Parsed AST:", ast);
+} catch (error) {
+    console.error("Parse error:", error);
+}
+```
+
+#### `get_supported_dialects()`
+Returns an array of supported dialect names:
+
+```javascript
+import { get_supported_dialects } from './pkg/sql_parser_wasm.js';
+
+const dialects = get_supported_dialects();
+console.log("Supported dialects:", dialects);
+// Output: ["generic", "postgresql", "mysql", "sqlite", ...]
+```
+
+### Web Example
+
+See `examples/wasm_example.html` for a complete web-based example that demonstrates all WASM functionality.
+
+To run the example:
+
+1. Build the WASM package: `wasm-pack build --target web --features wasm`
+2. Serve the project directory with an HTTP server
+3. Open `examples/wasm_example.html` in your browser
+
+```bash
+# Using Python
+python -m http.server 8000
+
+# Using Node.js
+npx serve .
+```
+
+## Running Tests
 
 ```bash
 cargo test

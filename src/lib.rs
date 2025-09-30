@@ -22,6 +22,12 @@ use sqlparser::dialect::{
 use sqlparser::parser::{Parser, ParserError};
 use serde_json::to_value;
 
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
+#[cfg(feature = "wasm")]
+use serde_wasm_bindgen;
+
 /// Parse a SQL statement using the specified dialect and return the AST as JSON
 ///
 /// # Arguments
@@ -85,6 +91,125 @@ pub fn parse_sql(dialect: &str, sql: &str) -> Result<String, String> {
     // Convert to pretty-printed JSON string
     serde_json::to_string_pretty(&json_value)
         .map_err(|e| format!("JSON string conversion error: {}", e))
+}
+
+/// WASM-compatible function for parsing SQL from JavaScript
+/// 
+/// This function provides the same functionality as `parse_sql` but returns
+/// JavaScript-compatible values that can be used directly in web applications.
+///
+/// # Arguments
+///
+/// * `dialect` - The SQL dialect to use for parsing
+/// * `sql` - The SQL statement to parse
+///
+/// # Returns
+///
+/// Returns `Ok(JsValue)` containing the parsed AST as a JavaScript object,
+/// or `Err(JsValue)` containing the error message as a JavaScript string.
+///
+/// # Examples
+///
+/// ```javascript
+/// import { parse_sql_wasm } from './pkg/sql_parser_wasm.js';
+///
+/// try {
+///     const result = parse_sql_wasm("postgresql", "SELECT * FROM users");
+///     console.log("Parsed AST:", result);
+/// } catch (error) {
+///     console.error("Parse error:", error);
+/// }
+/// ```
+#[cfg(feature = "wasm")]
+#[wasm_bindgen]
+pub fn parse_sql_wasm(dialect: &str, sql: &str) -> Result<JsValue, JsValue> {
+    // Parse using the regular function
+    match parse_sql(dialect, sql) {
+        Ok(json_string) => {
+            // Parse the JSON string to a serde_json::Value
+            let json_value: serde_json::Value = serde_json::from_str(&json_string)
+                .map_err(|e| JsValue::from_str(&format!("JSON parsing error: {}", e)))?;
+            
+            // Convert to JavaScript object
+            serde_wasm_bindgen::to_value(&json_value)
+                .map_err(|e| JsValue::from_str(&format!("WASM conversion error: {}", e)))
+        }
+        Err(error) => Err(JsValue::from_str(&error)),
+    }
+}
+
+/// Alternative WASM function that returns the AST as a JSON string
+/// 
+/// This function is useful when you want to work with the JSON string directly
+/// in JavaScript rather than parsing it to a JavaScript object.
+///
+/// # Arguments
+///
+/// * `dialect` - The SQL dialect to use for parsing
+/// * `sql` - The SQL statement to parse
+///
+/// # Returns
+///
+/// Returns the JSON string representation of the parsed AST or an error message.
+///
+/// # Examples
+///
+/// ```javascript
+/// import { parse_sql_json } from './pkg/sql_parser_wasm.js';
+///
+/// try {
+///     const jsonString = parse_sql_json("postgresql", "SELECT * FROM users");
+///     const ast = JSON.parse(jsonString);
+///     console.log("Parsed AST:", ast);
+/// } catch (error) {
+///     console.error("Parse error:", error);
+/// }
+/// ```
+#[cfg(feature = "wasm")]
+#[wasm_bindgen]
+pub fn parse_sql_json(dialect: &str, sql: &str) -> Result<String, String> {
+    parse_sql(dialect, sql)
+}
+
+/// Get a list of supported SQL dialects
+/// 
+/// Returns an array of supported dialect names that can be used with the parsing functions.
+///
+/// # Returns
+///
+/// Returns a JavaScript array containing all supported dialect names.
+///
+/// # Examples
+///
+/// ```javascript
+/// import { get_supported_dialects } from './pkg/sql_parser_wasm.js';
+///
+/// const dialects = get_supported_dialects();
+/// console.log("Supported dialects:", dialects);
+/// ```
+#[cfg(feature = "wasm")]
+#[wasm_bindgen]
+pub fn get_supported_dialects() -> js_sys::Array {
+    let dialects = vec![
+        "generic",
+        "postgresql", 
+        "postgres",
+        "mysql",
+        "sqlite",
+        "mssql",
+        "sqlserver",
+        "snowflake",
+        "redshift",
+        "bigquery",
+        "clickhouse",
+        "hive",
+    ];
+    
+    let js_array = js_sys::Array::new();
+    for dialect in dialects {
+        js_array.push(&JsValue::from_str(dialect));
+    }
+    js_array
 }
 
 #[cfg(test)]
@@ -191,5 +316,45 @@ mod tests {
         assert!(json.contains("users"));
         assert!(json.contains("posts"));
         assert!(json.contains("published"));
+    }
+
+    #[test]
+    fn test_json_conversion_for_wasm() {
+        // Test that our JSON conversion works correctly for WASM compatibility
+        let result = parse_sql("postgresql", "SELECT id, name FROM users WHERE active = true");
+        assert!(result.is_ok());
+
+        let json_string = result.unwrap();
+        
+        // Parse back to ensure it's valid JSON
+        let parsed: serde_json::Value = serde_json::from_str(&json_string).unwrap();
+        
+        // Should be an array
+        assert!(parsed.is_array());
+        
+        // Should contain our expected elements
+        let json_text = serde_json::to_string(&parsed).unwrap();
+        assert!(json_text.contains("Select"));
+        assert!(json_text.contains("users"));
+        assert!(json_text.contains("active"));
+    }
+
+    #[test]
+    fn test_supported_dialects_coverage() {
+        // Test that all our supported dialects actually work
+        let test_sql = "SELECT 1 as test_column";
+        let dialects = vec![
+            "generic", "postgresql", "postgres", "mysql", "sqlite", 
+            "mssql", "sqlserver", "snowflake", "redshift", "bigquery", 
+            "clickhouse", "hive"
+        ];
+
+        for dialect in dialects {
+            let result = parse_sql(dialect, test_sql);
+            assert!(result.is_ok(), "Dialect '{}' should work", dialect);
+            
+            let json = result.unwrap();
+            assert!(json.contains("Select"), "Result for dialect '{}' should contain Select", dialect);
+        }
     }
 }
