@@ -642,3 +642,13 @@ export interface MemberOf {
     value: Expr;
     array: Expr;
 }
+
+/**
+ * An expression optionally followed by an alias.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.ExprWithAlias.html
+ */
+export interface ExprWithAlias {
+    expr: Expr;
+    alias?: Ident;
+}
