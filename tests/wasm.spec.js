@@ -274,3 +274,81 @@ describe('visitor', () => {
         expect(post_visit_expr).toHaveBeenCalledTimes(7);
     });
 });
+
+describe('format', () => {
+    it('should be able to format some SQL', () => {
+        const result = parse_sql("generic", "SELECT * FROM users;");
+
+        expect(result.length).toBe(1);
+        const statement = result[0];
+        const formatted = format(statement);
+        expect(formatted).toBe("SELECT * FROM users");
+    });
+
+    it('should be able to format edited SQL', () => {
+        const result = parse_sql("generic", "SELECT * FROM users;");
+
+        expect(result.length).toBe(1);
+        const statement = result[0];
+
+
+        statement.Query.body.Select.from[0].joins = [
+            {
+                global: false,
+                join_operator: {
+                    Inner: {
+                        On: {
+                            BinaryOp: {
+                                left: {
+                                    CompoundIdentifier: [
+                                        {
+                                            value: "users",
+                                            span: span()
+                                        },
+                                        {
+                                            value: "id",
+                                            span: span()
+                                        }
+                                    ]
+                                },
+                                op: 'Eq',
+                                right: {
+                                    CompoundIdentifier: [
+                                        {
+                                            value: "orders",
+                                            span: span()
+                                        },
+                                        {
+                                            value: "user_id",
+                                            span: span()
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                },
+                relation: {
+                    Table: {
+                        index_hints: [],
+                        partitions: [],
+                        with_hints: [],
+                        with_ordinality: false,
+                        name: [
+                            {
+                                Identifier: {
+                                    value: "orders",
+                                    span: span()
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        ];
+
+        const formatted = format(statement);
+        expect(formatted).toBe("SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id");
+    });
+
+});

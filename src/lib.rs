@@ -17,6 +17,7 @@
 
 use core::ops::ControlFlow;
 
+use js_sys::JsString;
 use sqlparser::dialect::{
     Dialect, GenericDialect, PostgreSqlDialect, MySqlDialect, SQLiteDialect,
     MsSqlDialect, SnowflakeDialect, RedshiftSqlDialect, BigQueryDialect,
@@ -266,7 +267,10 @@ impl Visitor for SQLVisitor {
 }
 
 #[wasm_bindgen]
-pub fn visit(visitor: &mut SQLVisitor, statement: &JsValue) {
-    let statement: Statement = serde_wasm_bindgen::from_value(statement.clone()).unwrap();
-    let _ = statement.visit(visitor);
+pub fn format(statement: &JsValue) -> Result<JsString, JsString> {
+    let statement: Statement = serde_wasm_bindgen::from_value(statement.clone())
+        .map_err(|e| format!("Failed to convert JsValue to Statement: {}", e))?;
+    
+    let formatted_sql = statement.to_string();
+    Ok(JsString::from(formatted_sql))
 }
