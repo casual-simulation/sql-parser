@@ -3,25 +3,22 @@
   "version": "0.1.0",
   "description": "A SQL parser library with WASM and TypeScript bindings",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "pkg/sql_parser_wasm.js",
+  "types": "pkg/sql_parser_wasm.d.ts",
   "module": "dist/index.esm.js",
   "files": [
     "dist/",
-    "pkg/",
-    "README.md"
+    "pkg/sql_parser_wasm_bg.wasm",
+    "pkg/sql_parser_wasm.js",
+    "pkg/sql_parser_wasm.d.ts",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
-    "build": "npm run build:wasm && npm run build:ts",
-    "build:wasm": "wasm-pack build --target web --features wasm --out-dir pkg",
-    "build:ts": "npm run clean && tsc",
-    "clean": "rimraf dist/",
-    "dev": "tsc --watch",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll",
-    "lint": "eslint src/ --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "prepare": "npm run build"
+    "build": "wasm-pack build --target web",
+    "test": "wasm-pack test --node && pnpm test:js",
+    "test:js": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:js:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll"
   },
   "keywords": [
     "sql",

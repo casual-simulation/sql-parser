@@ -176,6 +176,12 @@ impl SQLVisitor {
         }
     }
 
+    #[wasm_bindgen]
+    pub fn visit(&mut self, statement: &JsValue) {
+        let statement: Statement = serde_wasm_bindgen::from_value(statement.clone()).unwrap();
+        let _ = statement.visit(self);
+    }
+
     fn call(func: &js_sys::Function, value: &JsValue) -> ControlFlow<<SQLVisitor as Visitor>::Break> {
         if func.is_undefined() || func.is_null() {
             return ControlFlow::Continue(());

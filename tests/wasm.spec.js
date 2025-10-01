@@ -1,4 +1,4 @@
-import { initSync, parse_sql, SQLVisitor, visit } from '../pkg/sql_parser_wasm';
+import { initSync, parse_sql, SQLVisitor } from '../pkg/sql_parser_wasm';
 import { readFile } from 'node:fs/promises';
 import {jest} from '@jest/globals';
 
@@ -102,7 +102,7 @@ describe('visitor', () => {
         expect(result.length).toBe(1);
         const statement = result[0];
 
-        visit(visitor, statement);
+        visitor.visit(statement);
 
         expect(pre_visit_statement).toHaveBeenCalledTimes(1);
         expect(post_visit_statement).toHaveBeenCalledTimes(1);
@@ -121,7 +121,7 @@ describe('visitor', () => {
         expect(result.length).toBe(1);
         const statement = result[0];
 
-        visit(visitor, statement);
+        visitor.visit(statement);
 
         expect(pre_visit_statement).toHaveBeenCalledTimes(1);
         expect(post_visit_statement).toHaveBeenCalledTimes(1);
@@ -135,7 +135,7 @@ describe('visitor', () => {
 
         const statement = result[0];
         
-        visit(visitor, statement);
+        visitor.visit(statement);
 
         expect(pre_visit_query).toHaveBeenCalledTimes(1);
         expect(post_visit_query).toHaveBeenCalledTimes(1);
@@ -149,7 +149,7 @@ describe('visitor', () => {
 
         const statement = result[0];
         
-        visit(visitor, statement);
+        visitor.visit(statement);
 
         expect(pre_visit_table_factor).toHaveBeenCalledTimes(2);
         expect(post_visit_table_factor).toHaveBeenCalledTimes(2);
@@ -225,7 +225,7 @@ describe('visitor', () => {
 
         const statement = result[0];
         
-        visit(visitor, statement);
+        visitor.visit(statement);
 
         expect(pre_visit_relation).toHaveBeenCalledTimes(2);
         expect(post_visit_relation).toHaveBeenCalledTimes(2);
@@ -261,7 +261,7 @@ describe('visitor', () => {
 
         const statement = result[0];
 
-        visit(visitor, statement);
+        visitor.visit(statement);
 
         expect(pre_visit_value).toHaveBeenCalledTimes(4);
         expect(post_visit_value).toHaveBeenCalledTimes(4);
@@ -276,7 +276,7 @@ describe('visitor', () => {
         expect(result.length).toBe(1);
 
         const statement = result[0];
-        visit(visitor, statement);
+        visitor.visit(statement);
 
         expect(pre_visit_expr).toHaveBeenCalledTimes(7);
         expect(post_visit_expr).toHaveBeenCalledTimes(7);
