@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "description": "A SQL parser library with WASM and TypeScript bindings",
   "type": "module",
-  "main": "pkg/sql_parser_wasm.js",
-  "types": "pkg/sql_parser_wasm.d.ts",
-  "module": "dist/index.esm.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.js",
   "files": [
     "dist/",
     "pkg/sql_parser_wasm_bg.wasm",
