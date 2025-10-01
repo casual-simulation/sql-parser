@@ -1,16 +1,8 @@
-import { initSync, parse_sql, SQLVisitor } from '../pkg/sql_parser_wasm';
-import { readFile } from 'node:fs/promises';
+import { parse_sql, SQLVisitor, format, span, init } from '../dist/index';
 import {jest} from '@jest/globals';
 
 beforeAll(async () => {
-    let wasmPath = new URL(import.meta.resolve('../pkg/sql_parser_wasm_bg.wasm')).pathname;
-    if (process.platform === 'win32' && wasmPath.startsWith('/')) {
-        wasmPath = wasmPath.slice(1);
-    }
-    const bytes = await readFile(wasmPath);
-    initSync({
-        module: bytes
-    });
+    await init();
 });
 
 it('should be able to parse some SQL', () => {
