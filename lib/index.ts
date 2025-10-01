@@ -1,7 +1,7 @@
-export * from '../pkg/sql_parser_wasm';
+import { parse_sql, format as format_sql, SQLVisitor } from '../pkg/sql_parser_wasm';
 export * from './types';
 import initWasm, { InitInput, initSync } from '../pkg/sql_parser_wasm';
-import type { Span, Location } from './types';
+import type { Span, Location, Statement } from './types';
 
 /**
  * Initializes the WASM module.
@@ -43,4 +43,21 @@ export function loc(line: number = 0, column: number = 0): Location {
  */
 export function span(start: Location = loc(), end: Location = loc()): Span {
     return { start, end };
+}
+
+/**
+ * Parses the given SQL string into an array of statements.
+ * @param sql The SQL string to parse.
+ * @param dialect The SQL dialect to use. Defaults to 'generic'.
+ */
+export function parse(sql: string, dialect: string = 'generic'): Statement[] {
+    return parse_sql(dialect, sql);
+}
+
+/**
+ * Formats the given statement into a SQL string.
+ * @param statement The statement to format.
+ */
+export function format(statement: Statement): string {
+    return format_sql(statement);
 }
