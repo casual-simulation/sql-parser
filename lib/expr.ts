@@ -1,6 +1,8 @@
 import type { Ident, ObjectName } from "./ident";
-import type { AttachedToken, Value } from "./token";
+import type { AttachedToken, Token, TypedString, Value, ValueWithSpan } from "./token";
 import type { Query } from "./statement";
+import type { Keyword } from "./keyword";
+import type { DataType, StructField } from "./data-type";
 
 /**
  * An SQL expression of any type.
@@ -228,33 +230,62 @@ export type Expr = {
         target_before_value: boolean,
         styles: Expr[],
     },
+
+    /**
+     * `CAST` an expression to a different data type e.g. `CAST(foo AS VARCHAR(123))`
+     */
     Cast?: {
         kind: CastKind,
         expr: Expr,
         data_type: DataType,
         format?: CastFormat,
     },
+
+    /**
+     * AT a timestamp to a different timezone e.g. `FROM_UNIXTIME(0) AT TIME ZONE 'UTC-06:00'`
+     */
     AtTimeZone?: {
         timestamp: Expr,
         time_zone: Expr,
     },
+
+    /**
+     * Extract a field from a timestamp e.g. `EXTRACT(MONTH FROM foo)` Or `EXTRACT(MONTH, foo)`
+     * 
+     * ```EXTRACT(DateTimeField FROM <expr>) | EXTRACT(DateTimeField, <expr>)```
+     */
     Extract?: {
         field: DateTimeField,
         syntax: ExtractSyntax,
         expr: Expr,
     },
+
+    /**
+     * ```CEIL( <input_expr> [, <scale_expr> ] )```
+     */
     Ceil?: {
         expr: Expr,
         field: CeilFloorKind,
     },
+
+    /**
+     * ```FLOOR( <input_expr> [, <scale_expr> ] )```
+     */
     Floor?: {
         expr: Expr,
         field: CeilFloorKind,
     },
+
+    /**
+     * ```POSITION(<expr> in <expr>)```
+     */
     Position?: {
         expr: Expr,
         in: Expr,
     },
+    /**
+     * ```SUBSTRING(<expr>, <expr>, <expr>)```
+     */
     Substring?: {
         expr: Expr,
         substring_from?: Expr,
@@ -262,11 +293,18 @@ export type Expr = {
         special: boolean,
         shorthand: boolean,
     },
+    /**
+     * ```
+     * TRIM([BOTH | LEADING | TRAILING] [<expr> FROM] <expr>)
+     * TRIM(<expr>)
+     * TRIM(<expr>, [, characters]) -- only Snowflake or Bigquery
+     * ```
+     */
     Trim?: {
         expr: Expr,
         trim_where?: TrimWhereField,
         trim_what?: Expr,
-        trim_characters?: Vec<Expr>,
+        trim_characters?: Expr[],
     },
     Overlay?: {
         expr: Expr,
@@ -311,13 +349,13 @@ export type Expr = {
         name: Ident,
     },
     Dictionary?: DictionaryField[],
-    Map?: Map,
-    Array?: Array,
+    Map?: any,
+    Array?: ArrayExpr,
     Interval?: Interval,
     MatchAgainst?: {
         columns: ObjectName[],
         match_value: Value,
-        opt_search_modifier?: SearchModifier,
+        opt_search_modifier?: any,
     },
     Wildcard?: AttachedToken,
     QualifiedWildcard?: [ObjectName, AttachedToken],
@@ -490,131 +528,117 @@ export type UnaryOperator =
     | 'QuestionPipe';
 
 /**
- * SQL data types.
+ * The syntax used for in a cast expression.
  * 
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DataType.html
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.CastKind.html
  */
-export type DataType = {
-    Table(Option<Vec<ColumnDef>>),
-    NamedTable {
-        name: ObjectName,
-        columns: Vec<ColumnDef>,
-    },
-    Character(Option<CharacterLength>),
-    Char(Option<CharacterLength>),
-    CharacterVarying(Option<CharacterLength>),
-    CharVarying(Option<CharacterLength>),
-    Varchar(Option<CharacterLength>),
-    Nvarchar(Option<CharacterLength>),
-    Uuid,
-    CharacterLargeObject(Option<u64>),
-    CharLargeObject(Option<u64>),
-    Clob(Option<u64>),
-    Binary(Option<u64>),
-    Varbinary(Option<BinaryLength>),
-    Blob(Option<u64>),
-    TinyBlob,
-    MediumBlob,
-    LongBlob,
-    Bytes(Option<u64>),
-    Numeric(ExactNumberInfo),
-    Decimal(ExactNumberInfo),
-    DecimalUnsigned(ExactNumberInfo),
-    BigNumeric(ExactNumberInfo),
-    BigDecimal(ExactNumberInfo),
-    Dec(ExactNumberInfo),
-    DecUnsigned(ExactNumberInfo),
-    Float(ExactNumberInfo),
-    FloatUnsigned(ExactNumberInfo),
-    TinyInt(Option<u64>),
-    TinyIntUnsigned(Option<u64>),
-    UTinyInt,
-    Int2(Option<u64>),
-    Int2Unsigned(Option<u64>),
-    SmallInt(Option<u64>),
-    SmallIntUnsigned(Option<u64>),
-    USmallInt,
-    MediumInt(Option<u64>),
-    MediumIntUnsigned(Option<u64>),
-    Int(Option<u64>),
-    Int4(Option<u64>),
-    Int8(Option<u64>),
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Int256,
-    Integer(Option<u64>),
-    IntUnsigned(Option<u64>),
-    Int4Unsigned(Option<u64>),
-    IntegerUnsigned(Option<u64>),
-    HugeInt,
-    UHugeInt,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    UInt256,
-    BigInt(Option<u64>),
-    BigIntUnsigned(Option<u64>),
-    UBigInt,
-    Int8Unsigned(Option<u64>),
-    Signed,
-    SignedInteger,
-    Unsigned,
-    UnsignedInteger,
-    Float4,
-    Float32,
-    Float64,
-    Real,
-    RealUnsigned,
-    Float8,
-    Double(ExactNumberInfo),
-    DoubleUnsigned(ExactNumberInfo),
-    DoublePrecision,
-    DoublePrecisionUnsigned,
-    Bool,
-    Boolean,
-    Date,
-    Date32,
-    Time(Option<u64>, TimezoneInfo),
-    Datetime(Option<u64>),
-    Datetime64(u64, Option<String>),
-    Timestamp(Option<u64>, TimezoneInfo),
-    TimestampNtz,
-    Interval {
-        fields: Option<IntervalFields>,
-        precision: Option<u64>,
-    },
-    JSON,
-    JSONB,
-    Regclass,
-    Text,
-    TinyText,
-    MediumText,
-    LongText,
-    String(Option<u64>),
-    FixedString(u64),
-    Bytea,
-    Bit(Option<u64>),
-    BitVarying(Option<u64>),
-    VarBit(Option<u64>),
-    Custom(ObjectName, Vec<String>),
-    Array(ArrayElemTypeDef),
-    Map(Box<DataType>, Box<DataType>),
-    Tuple(Vec<StructField>),
-    Nested(Vec<ColumnDef>),
-    Enum(Vec<EnumMember>, Option<u8>),
-    Set(Vec<String>),
-    Struct(Vec<StructField>, StructBracketKind),
-    Union(Vec<UnionField>),
-    Nullable(Box<DataType>),
-    LowCardinality(Box<DataType>),
-    Unspecified,
-    Trigger,
-    AnyType,
-    GeometricType(GeometricTypeKind),
-    TsVector,
-    TsQuery,
-};
+export type CastKind = 
+    | 'Cast'
+    | 'TryCast'
+    | 'SafeCast'
+    | 'DoubleColon';
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.CastFormat.html
+ */
+export type CastFormat = {
+    Value?: Value;
+    ValueAtTimeZone?: [Value, Value];
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DateTimeField.html
+ */
+export type DateTimeField = any; // TODO:
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.ExtractSyntax.html
+ */
+export type ExtractSyntax = 'From' | 'Comma';
+
+/**
+ * The syntax used in a `CEIL` or `FLOOR` expression.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.CeilFloorKind.html
+ */
+export type CeilFloorKind = {
+    DateTimeField?: DateTimeField;
+    Scale?: Value;
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TrimWhereField.html
+ */
+export type TrimWhereField = 'Both' | 'Leading' | 'Trailing';
+
+/**
+ * A WHEN clause in a CASE expression containing both the condition and its corresponding result
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.CaseWhen.html
+ */
+export interface CaseWhen {
+    condition: Expr;
+    result: Expr;
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.DictionaryField.html
+ */
+export type DictionaryField = any; // TODO:
+
+/**
+ * Represents an Array Expression, either `ARRAY[..]`, or `[..]`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.Array.html
+ */
+export interface ArrayExpr {
+    elem: Expr[];
+    named: boolean;
+}
+
+/**
+ * Represents an INTERVAL expression, roughly in the following format: `INTERVAL '<value>' [ <leading_field> [ (<leading_precision>) ] ] [ TO <last_field> [ (<fractional_seconds_precision>) ] ]`, e.g. `INTERVAL '123:45.67' MINUTE(3) TO SECOND(2)`.
+
+  The parser does not validate the <value>, nor does it ensure that the <leading_field> units >= the units in <last_field>, so the user will have to reject intervals like HOUR TO YEAR.
+
+  @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.Interval.html
+ */
+export interface Interval {
+    value: Expr;
+    leading_field?: DateTimeField;
+    leading_precision?: number;
+    last_field?: DateTimeField;
+    fractional_seconds_precision?: number;
+}
+
+/**
+ * A lambda function.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.LambdaFunction.html
+ */
+export interface LambdaFunction {
+    params: OneOrManyWithParens<Ident>;
+    body: Expr;
+}
+
+/**
+ * Encapsulates the common pattern in SQL where either one unparenthesized item such as an identifier or expression is permitted, or multiple of the same item in a parenthesized list. For accessing items regardless of the form, OneOrManyWithParens implements Deref<Target = [T]> and IntoIterator, so you can call slice methods on it and iterate over items.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.OneOrManyWithParens.html
+ */
+export type OneOrManyWithParens<T> = {
+    One?: T;
+    Many?: T[];
+}
+
+/**
+ * Checks membership of a value in a JSON array.
+ * 
+ * `<value> MEMBER OF(<array>)`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.MemberOf.html
+ */
+export interface MemberOf {
+    value: Expr;
+    array: Expr;
+}

@@ -1,3 +1,4 @@
+import { DataType } from "./data-type";
 import type { Keyword } from "./keyword";
 import type { Span } from "./span";
 
@@ -378,4 +379,24 @@ export type Value = 'Null' | {
      * `?` or `$` Prepared statement arg placeholder
      */
     Placeholder?: string;
+}
+
+/**
+ * Wraps a primitive SQL Value with its Span location.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.ValueWithSpan.html
+ */
+export interface ValueWithSpan {
+    value: Value;
+    span: Span;
+}
+
+/**
+ * A constant of form `<data_type> 'value'`.
+ * This can represent ANSI SQL `DATE`, `TIME`, and `TIMESTAMP` literals (such as `DATE '2020-01-01'`), as well as constants of other types (a non-standard PostgreSQL extension).
+ */
+export interface TypedString {
+    data_type: DataType;
+    value: ValueWithSpan;
+    uses_odbc_syntax: boolean;
 }

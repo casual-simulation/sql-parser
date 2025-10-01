@@ -36,28 +36,3 @@ export interface ObjectNamePartFunction {
     name: Ident;
     args: FunctionArg[];
 }
-
-
-export type Value = {
-    Number: [String, boolean];
-    SingleQuotedString(String),
-    DollarQuotedString(DollarQuotedString),
-    TripleSingleQuotedString(String),
-    TripleDoubleQuotedString(String),
-    EscapedStringLiteral(String),
-    UnicodeStringLiteral(String),
-    SingleQuotedByteStringLiteral(String),
-    DoubleQuotedByteStringLiteral(String),
-    TripleSingleQuotedByteStringLiteral(String),
-    TripleDoubleQuotedByteStringLiteral(String),
-    SingleQuotedRawStringLiteral(String),
-    DoubleQuotedRawStringLiteral(String),
-    TripleSingleQuotedRawStringLiteral(String),
-    TripleDoubleQuotedRawStringLiteral(String),
-    NationalStringLiteral(String),
-    HexStringLiteral(String),
-    DoubleQuotedString(String),
-    Boolean(bool),
-    Null,
-    Placeholder(String),
-}
