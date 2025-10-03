@@ -11,11 +11,128 @@ import type { AttachedToken, Value } from "./token";
  * 
  * See https://docs.rs/sqlparser/latest/sqlparser/ast/enum.Statement.html for more information.
  */
-export type Statement = 
-    | Query
-    | Insert
-    | Update
-    | Delete;
+export type Statement = {
+    Query?: Query;
+    Insert?: Insert;
+    Update?: Update;
+    Delete?: Delete;
+
+
+    Analyze?: unknown;
+    Set?: unknown;
+    Truncate?: unknown;
+    Msck?: unknown;
+    Install?: unknown;
+    Load?: unknown
+    Directory?: unknown;
+    Case?: unknown;
+    If?: unknown;
+    While?: unknown;
+    Raise?: unknown;
+    Call?: unknown;
+    Copy?: unknown;
+    CopyIntoSnowflake?: unknown;
+    Open?: unknown;
+    Close?: unknown;
+    CreateView?: unknown;
+    CreateTable?: unknown;
+    CreateVirtualTable?: unknown;
+    CreateIndex?: unknown;
+    CreateRole?: unknown;
+    CreateSecret?: unknown;
+    CreateServer?: unknown;
+    CreatePolicy?: unknown;
+    CreateConnector?: unknown;
+    AlterTable?: unknown;
+    AlterSchema?: unknown;
+    AlterIndex?: unknown;
+    AlterView?: unknown;
+    AlterType?: unknown;
+    AlterRole?: unknown;
+    AlterPolicy?: unknown;
+    AlterConnector?: unknown;
+    AlterSession ?: unknown;
+    AttachDatabase?: unknown;
+    AttachDuckDBDatabase?: unknown;
+    DetachDuckDBDatabase?: unknown;
+    Drop?: unknown;
+    DropFunction?: unknown;
+    DropDomain?: unknown;
+    DropProcedure?: unknown;
+    DropSecret?: unknown;
+    DropPolicy?: unknown;
+    DropConnector?: unknown;
+    Declare?: unknown;
+    CreateExtension?: unknown;
+    DropExtension?: unknown;
+    Fetch?: unknown;
+    Flush?: unknown;
+    Discard?: unknown;
+    ShowFunctions?: unknown;
+    ShowVariable?: unknown;
+    ShowStatus?: unknown;
+    ShowVariables?: unknown;
+    ShowCreate?: unknown;
+    ShowColumns?: unknown;
+    ShowDatabases ?: unknown;
+    ShowSchemas ?: unknown;
+    ShowCharset?: unknown;
+    ShowObjects?: unknown;
+    ShowTables?: unknown;
+    ShowViews?: unknown;
+    ShowCollation?: unknown;
+    Use?: unknown;
+    StartTransaction?: unknown;
+    Comment?: unknown;
+    Commit?: unknown;
+    Rollback?: unknown;
+    CreateSchema?: unknown;
+    CreateDatabase?: unknown;
+    CreateFunction?: unknown;
+    CreateTrigger?: unknown;
+    DropTrigger?: unknown;
+    CreateProcedure?: unknown;
+    CreateMacro?: unknown;
+    CreateStage?: unknown;
+    Assert?: unknown;
+    Grant?: unknown;
+    Deny?: unknown;
+    Revoke?: unknown;
+    Deallocate?: unknown;
+    Execute?: unknown;
+    Prepare?: unknown;
+    Kill?: unknown;
+    ExplainTable?: unknown;
+    Explain?: unknown;
+    Savepoint?: unknown;
+    ReleaseSavepoint?: unknown;
+    Merge?: unknown;
+    Cache?: unknown;
+    UNCache?: unknown;
+    CreateSequence?: unknown;
+    CreateDomain?: unknown;
+    CreateType?: unknown;
+    Pragma?: unknown;
+    LockTables?: unknown;
+    UnlockTables?: unknown;
+    Unload?: unknown;
+    OptimizeTable?: unknown;
+    LISTEN?: unknown;
+    UNLISTEN?: unknown;
+    NOTIFY?: unknown;
+    LoadData?: unknown;
+    RenameTable?: unknown;
+    List?: unknown;
+    Remove?: unknown;
+    RaisError?: unknown;
+    Print?: unknown;
+    Return?: unknown;
+    ExportData?: unknown;
+    CreateUser?: unknown;
+    Vacuum?: unknown;
+}
+
+
 
 /**
  * A SQL Delete statement.
