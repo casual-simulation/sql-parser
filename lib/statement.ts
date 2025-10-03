@@ -1,5 +1,5 @@
-import { DataType } from "./data-type";
-import type { Expr, ExprWithAlias } from "./expr";
+import { ColumnDef, CommentDef, DataType, NullsDistinctOption, SqlOption } from "./data-type";
+import type { Expr, ExprWithAlias, OneOrManyWithParens } from "./expr";
 import { FunctionArg, SQLFunction } from "./function";
 import type { Ident, ObjectName } from "./ident";
 import type { AttachedToken, Value } from "./token";
@@ -42,7 +42,7 @@ export type Statement = {
     Open?: unknown;
     Close?: unknown;
     CreateView?: unknown;
-    CreateTable?: unknown;
+    CreateTable?: CreateTable;
     CreateVirtualTable?: unknown;
     CreateIndex?: unknown;
     CreateRole?: unknown;
@@ -138,6 +138,303 @@ export type Statement = {
     CreateUser?: unknown;
     Vacuum?: unknown;
 }
+
+/**
+ * SQL `CREATE TABLE` statement.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.CreateTable.html
+ */
+export interface CreateTable {
+    or_replace: boolean,
+    temporary: boolean,
+    external: boolean,
+    dynamic: boolean,
+    global?: boolean,
+    if_not_exists: boolean,
+    transient: boolean,
+    volatile: boolean,
+    iceberg: boolean,
+    name: ObjectName,
+    columns: ColumnDef[],
+    constraints: TableConstraint[],
+    hive_distribution: unknown, // TODO: Define proper type
+    hive_formats?: unknown, // TODO: Define proper type
+    table_options: CreateTableOptions,
+    file_format?: FileFormat,
+    location?: String,
+    query?: Query,
+    without_rowid: boolean,
+    like?: CreateTableLikeKind,
+    clone?: ObjectName,
+    version?: TableVersion,
+    comment?: CommentDef,
+    on_commit?: OnCommit,
+    on_cluster?: Ident,
+    primary_key?: Expr,
+    order_by?: OneOrManyWithParens<Expr>,
+    partition_by?: Expr,
+    cluster_by?: WrappedCollection<Expr>,
+    clustered_by?: ClusteredBy,
+    inherits?: ObjectName,
+    strict: boolean,
+    copy_grants: boolean,
+    enable_schema_evolution?: boolean,
+    change_tracking?: boolean,
+    data_retention_time_in_days?: number,
+    max_data_extension_time_in_days?: number,
+    default_ddl_collation?: String,
+    with_aggregation_policy?: ObjectName,
+    with_row_access_policy?: RowAccessPolicy,
+    with_tags?: Tag,
+    external_volume?: String,
+    base_location?: String,
+    catalog?: String,
+    catalog_sync?: String,
+    storage_serialization_policy?: StorageSerializationPolicy,
+    target_lag?: String,
+    warehouse?: Ident,
+    refresh_mode?: RefreshModeKind,
+    initialize?: InitializeKind,
+    require_user: boolean,
+}
+
+/**
+ * Specifies how to create a new table based on an existing table’s schema. 
+ * ```sql
+ * CREATE TABLE new LIKE old …
+ * ```
+ */
+export type CreateTableLikeKind = {
+    /**
+     * ```sql
+     * CREATE TABLE new (LIKE old …)
+     * ```
+     * Redshift
+     */
+    Parenthesized?: CreateTableLike,
+
+    /**
+     * ```sql
+     *  CREATE TABLE new LIKE old …
+     * ```
+     */
+    Plain?: CreateTableLike,
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.CreateTableLike.html
+ */
+export interface CreateTableLike {
+    name: ObjectName;
+    defaults?: unknown; // TODO: Define proper type
+}
+
+/**
+ * Sql options of a `CREATE TABLE` statement.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.CreateTableOptions.html
+ */
+export type CreateTableOptions = 'None' | {
+    /**
+     * Options specified using the `WITH` keyword. e.g. `WITH (description = "123")`
+     * 
+     * @see https://www.postgresql.org/docs/current/sql-createtable.html
+     * 
+     * MSSQL supports more specific options that’s not only key-value pairs.
+     * 
+     * `WITH ( DISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX (column_a DESC, column_b) )`
+     * 
+     * @see https://learn.microsoft.com/en-us/sql/t-sql/statements/create-table-azure-sql-data-warehouse?view=aps-pdw-2016-au7#syntax
+     */
+    With?: SqlOption[],
+
+    /**
+     * Options specified using the `OPTIONS` keyword. e.g. `OPTIONS(description = "123")`
+     * 
+     * @see https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language#table_option_list
+     */
+    Options?: SqlOption[],
+
+    /**
+     * Plain options, options which are not part on any declerative statement e.g. `WITH`/`OPTIONS`/…
+     * 
+     * @see https://dev.mysql.com/doc/refman/8.4/en/create-table.html
+     */
+    Plain?: SqlOption[],
+    TableProperties?: SqlOption[],
+};
+
+/**
+ * A table-level constraint, specified in a `CREATE TABLE` or an `ALTER TABLE ADD <constraint>` statement.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TableConstraint.html
+ */
+export interface TableConstraint {
+    Unique?: {
+        name?: Ident,
+        index_name?: Ident,
+        index_type_display: KeyOrIndexDisplay,
+        index_type?: IndexType,
+        columns: IndexColumn[],
+        index_options: IndexOption[],
+        characteristics?: ConstraintCharacteristics,
+        nulls_distinct: NullsDistinctOption,
+    },
+    PrimaryKey?: {
+        name?: Ident,
+        index_name?: Ident,
+        index_type?: IndexType,
+        columns: IndexColumn[],
+        index_options: IndexOption[],
+        characteristics?: ConstraintCharacteristics,
+    },
+    ForeignKey?: {
+        name?: Ident,
+        index_name?: Ident,
+        columns: Ident[],
+        foreign_table: ObjectName,
+        referred_columns: Ident[],
+        on_delete?: ReferentialAction,
+        on_update?: ReferentialAction,
+        characteristics?: ConstraintCharacteristics,
+    },
+    Check?: {
+        name?: Ident,
+        expr: Expr,
+        enforced?: boolean,
+    },
+    Index?: {
+        display_as_key: boolean,
+        name?: Ident,
+        index_type?: IndexType,
+        columns: IndexColumn[],
+        index_options: IndexOption[],
+    },
+    FulltextOrSpatial?: {
+        fulltext: boolean,
+        index_type_display: KeyOrIndexDisplay,
+        opt_index_name?: Ident,
+        columns: IndexColumn[],
+    },
+}
+
+/**
+ * External table’s available file format
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.FileFormat.html
+ */
+export type FileFormat = 
+    | 'TEXTFILE'
+    | 'SEQUENCEFILE'
+    | 'ORC'
+    | 'PARQUET'
+    | 'AVRO'
+    | 'RCFILE'
+    | 'JSONFILE';
+
+/**
+ * `<constraint_characteristics> = [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] [ ENFORCED | NOT ENFORCED ]`
+ * 
+ * Used in UNIQUE and foreign key constraints. The individual settings may occur in any order.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.ConstraintCharacteristics.html
+ */
+export interface ConstraintCharacteristics {
+    /**
+     * `[ DEFERRABLE | NOT DEFERRABLE ]`
+     */
+    deferrable?: boolean,
+
+    /**
+     * `[ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]`
+     */
+    initially?: DeferrableInitial,
+
+    /**
+     * `[ ENFORCED | NOT ENFORCED ]`
+     */
+    enforced?: boolean,
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DeferrableInitial.html
+ */
+export type DeferrableInitial = 'Immediate' | 'Deferred';
+
+/**
+ * `<referential_action> = { RESTRICT | CASCADE | SET NULL | NO ACTION | SET DEFAULT }`
+ * 
+ * Used in foreign key constraints in ON UPDATE and ON DELETE options.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.ReferentialAction.html
+ */
+export type ReferentialAction =
+    | 'Restrict'
+    | 'Cascade'
+    | 'SetNull'
+    | 'NoAction'
+    | 'SetDefault';
+
+/**
+ * Representation whether a definition can can contains the KEY or INDEX keywords with the same meaning.
+ * 
+ * This enum initially is directed to `FULLTEXT`,`SPATIAL`, and `UNIQUE` indexes on create table statements of MySQL [(1)].
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.KeyOrIndexDisplay.html
+ */
+export type KeyOrIndexDisplay = 
+    | 'None'
+    | 'Key'
+    | 'Index';
+
+/**
+ * Indexing method used by that index.
+ * 
+ * This structure isn’t present on ANSI, but is found at least in MySQL `CREATE TABLE`, MySQL `CREATE INDEX`, and Postgresql `CREATE INDEX` statements.
+ */
+export type IndexType = 
+    | 'BTree'
+    | 'Hash'
+    | 'GIN'
+    | 'GiST'
+    | 'SPGiST'
+    | 'BRIN'
+    | 'Bloom'
+    | {
+        /**
+         * Users may define their own index types, which would not be covered by the above variants.
+         */
+        Custom: Ident
+    };
+
+/**
+ * Index column type.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.IndexColumn.html
+ */
+export interface IndexColumn {
+    column: OrderByExpr;
+    operator_class?: Ident;
+}
+
+/**
+ * MySQL index option, used in `CREATE TABLE`, `CREATE INDEX`, and `ALTER TABLE`.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.IndexOption.html
+ */
+export type IndexOption = {
+    /**
+     * `USING { BTREE | HASH }`: Index type to use for the index.
+     * Note that we permissively parse non-MySQL index types, like `GIN`.
+     */
+    Using?: IndexType;
+
+    /**
+     * `COMMENT 'string'`: Specifies a comment for the index.
+     */
+    Comment?: string;
+}
+
 
 /**
  * Target of a `TRUNCATE TABLE` command.

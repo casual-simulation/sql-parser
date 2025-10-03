@@ -14,6 +14,16 @@ export type NullTreatment =
     | 'RespectNulls';
 
 /**
+ * PostgreSQL unique index nulls handling option: `[ NULLS [ NOT ] DISTINCT ]`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.NullsDistinctOption.html
+ */
+export type NullsDistinctOption =
+    | 'None'
+    | 'Distinct'
+    | 'NotDistinct';
+
+/**
  * Simple SQL data types.
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DataType.html
