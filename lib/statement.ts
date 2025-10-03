@@ -20,7 +20,14 @@ export type Statement = {
 
     Analyze?: unknown;
     Set?: unknown;
-    Truncate?: unknown;
+    Truncate?: {
+        table_names: TruncateTableTarget,
+        partitions?: Expr[],
+        table: boolean,
+        identity?: TruncateIdentityOption,
+        cascade?: CascadeOption,
+        on_cluster?: Ident,
+    };
     Msck?: unknown;
     Install?: unknown;
     Load?: unknown
@@ -132,6 +139,41 @@ export type Statement = {
     Vacuum?: unknown;
 }
 
+/**
+ * Target of a `TRUNCATE TABLE` command.
+ * Note this is its own struct because `visit_relation` requires an `ObjectName` (not a `ObjectName[]`)
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.TruncateTableTarget.html
+ */
+export interface TruncateTableTarget {
+    /**
+     * name of the table being truncated
+     */
+    name: ObjectName;
+
+    /**
+     * Postgres-specific option [ TRUNCATE TABLE ONLY ] https://www.postgresql.org/docs/current/sql-truncate.html
+     */
+    only: boolean;
+}
+
+/**
+ * PostgreSQL identity option for TRUNCATE table [ RESTART IDENTITY | CONTINUE IDENTITY ]
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TruncateIdentityOption.html
+ */
+export type TruncateIdentityOption =
+    | 'Restart'
+    | 'Continue';
+
+/**
+ * Cascade/restrict option for Postgres TRUNCATE table, MySQL GRANT/REVOKE, etc. [ CASCADE | RESTRICT ]
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.CascadeOption.html
+ */
+export type CascadeOption =
+    | 'Cascade'
+    | 'Restrict';
 
 
 /**
