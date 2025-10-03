@@ -1,17 +1,334 @@
 import { DataType } from "./data-type";
 import type { Expr, ExprWithAlias } from "./expr";
-import { FunctionArg } from "./function";
+import { FunctionArg, SQLFunction } from "./function";
 import type { Ident, ObjectName } from "./ident";
 import type { AttachedToken, Value } from "./token";
 
 /**
  * The list of possible SQL statements.
  * 
- * Currently, only supports `Query` statements.
+ * Currently, only supports `Query`, `Insert`, `Update`, and `Delete` statements.
  * 
  * See https://docs.rs/sqlparser/latest/sqlparser/ast/enum.Statement.html for more information.
  */
-export type Statement = Query;
+export type Statement = 
+    | Query
+    | Insert
+    | Update
+    | Delete;
+
+/**
+ * A SQL Delete statement.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.Delete.html
+ */
+export interface Delete {
+    /**
+     * Multi tables delete are supported in mysql
+     */
+    tables: ObjectName[],
+
+    /**
+     * FROM
+     */
+    from: FromTable,
+
+    /**
+     * USING (Snowflake, Postgres, MySQL)
+     */
+    using?: TableWithJoins[],
+
+    /**
+     * WHERE
+     */
+    selection?: Expr,
+
+    /**
+     * RETURNING
+     */
+    returning?: SelectItem[],
+
+    /**
+     * ORDER BY (MySQL)
+     */
+    order_by: OrderByExpr[],
+
+    /**
+     * LIMIT (MySQL)
+     */
+    limit?: Expr,
+}
+
+/**
+ * A FROM clause within a DELETE statement.
+ * `[FROM] table`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.FromTable.html
+ */
+export type FromTable = {
+    /**
+     * An explicit `FROM` keyword was specified.
+     */
+    WithFromKeyword?: TableWithJoins[];
+
+    /**
+     * BigQuery: `FROM` keyword was omitted. https://cloud.google.com/bigquery/docs/reference/standard-sql/dml-syntax#delete_statement
+     */
+    WithoutKeyword?: TableWithJoins[];
+}
+
+/**
+ * A SQL Update statement.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.Statement.html#variant.Update
+ */
+export interface Update {
+    table: TableWithJoins;
+    assignments: Assignment[];
+    from?: UpdateTableFromKind;
+    selection?: Expr;
+    returning?: SelectItem[];
+    or?: SqliteOnConflict;
+    limit?: Expr;
+}
+
+/**
+ * The `FROM` clause of an `UPDATE TABLE` statement
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.UpdateTableFromKind.html
+ */
+export type UpdateTableFromKind = {
+    /**
+     * Update Statement where the ‘FROM’ clause is before the ‘SET’ keyword (Supported by Snowflake)
+     * For Example: `UPDATE FROM t1 SET t1.name='aaa'`
+     */
+    BeforeSet?: TableWithJoins[];
+
+    /**
+     * Update Statement where the ‘FROM’ clause is after the ‘SET’ keyword (Which is the standard way)
+     * For Example: `UPDATE SET t1.name='aaa' FROM t1`
+     */
+    AfterSet?: TableWithJoins[];
+}
+
+/**
+ * A SQL Insert statement.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.Insert.html
+ */
+export interface Insert {
+    /**
+     * Only for Sqlite.
+     */
+    or?: SqliteOnConflict,
+
+    /**
+     * Only for mysql.
+     */
+    ignore: boolean,
+
+    /**
+     * INTO - optional keyword.
+     */
+    into: boolean,
+
+    /**
+     * TABLE
+     */
+    table: TableObject,
+
+    /**
+     * table_name as foo (for PostgreSQL)
+     */
+    table_alias?: Ident,
+    
+    /**
+     * COLUMNS
+     */
+    columns: Ident[],
+
+    /**
+     * Overwrite (Hive)
+     */
+    overwrite: boolean,
+
+    /**
+     * A SQL query that specifies what to insert
+     */
+    source?: Query,
+
+    /**
+     * MySQL `INSERT INTO ... SET` See: https://dev.mysql.com/doc/refman/8.4/en/insert.html
+     */
+    assignments: Assignment[],
+
+    /**
+     * partitioned insert (Hive)
+     */
+    partitioned?: Expr[],
+
+    /**
+     * Columns defined after PARTITION
+     */
+    after_columns: Ident[],
+
+    /**
+     * whether the insert has the table keyword (Hive)
+     */
+    has_table_keyword: boolean,
+
+    on?: OnInsert,
+
+    /**
+     * RETURNING
+     */
+    returning?: SelectItem[],
+
+    /**
+     * Only for mysql
+     */
+    replace_into: boolean,
+
+    /**
+     * Only for mysql
+     * 
+     * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.MysqlInsertPriority.html
+     */
+    priority?: unknown;
+
+    /**
+     * Only for mysql
+     * 
+     * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.InsertAliases.html
+     */
+    insert_alias?: unknown,
+
+    /**
+     * Settings used for ClickHouse.
+     * ClickHouse syntax: `INSERT INTO tbl SETTINGS format_template_resultset = '/some/path/resultset.format'`
+     * [ClickHouse INSERT INTO](https://clickhouse.com/docs/en/sql-reference/statements/insert-into)
+     * 
+     * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.Setting.html
+     */
+    settings?: unknown[],
+
+    /**
+     * Format for `INSERT` statement when not using standard SQL format. Can be e.g. `CSV`, `JSON`, `JSONAsString`, `LineAsString` and more.
+     * 
+     * ClickHouse syntax: `INSERT INTO tbl FORMAT JSONEachRow {"foo": 1, "bar": 2}, {"foo": 3}`
+     * 
+     * [ClickHouse formats JSON insert](https://clickhouse.com/docs/en/interfaces/formats#json-inserting-data)
+     * 
+     * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.InputFormatClause.html
+     */
+    format_clause?: unknown,
+}
+
+/**
+ * Sqlite specific syntax
+ * 
+ * See [Sqlite documentation](https://docs.rs/sqlparser/latest/sqlparser/ast/enum.SqliteOnConflict.html) for more details.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.SqliteOnConflict.html
+ */
+export type SqliteOnConflict = 
+    | 'Rollback'
+    | 'Abort'
+    | 'Fail'
+    | 'Ignore'
+    | 'Replace';
+
+/**
+ * Represents the referenced table in an `INSERT INTO` statement
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TableObject.html
+ */
+export type TableObject = {
+    /**
+     * Table specified by name. Example:
+     * `INSERT INTO my_table`
+     */
+    TableName?: ObjectName;
+
+    /**
+     * Table specified as a function. Example:
+     * `INSERT INTO TABLE FUNCTION remote('localhost', default.simple_table)`
+     */
+    TableFunction?: SQLFunction;
+}
+
+/**
+ * Non exhaustive list of options.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.OnInsert.html
+ */
+export type OnInsert = {
+    /**
+     * ON DUPLICATE KEY UPDATE (MySQL when the key already exists, then execute an update instead)
+     */
+    DuplicateKeyUpdate?: Assignment[];
+
+    /**
+     * ON CONFLICT is a PostgreSQL and Sqlite extension
+     */
+    OnConflict?: OnConflict;
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.OnConflict.html
+ */
+export interface OnConflict {
+    conflict_target?: ConflictTarget;
+    action: OnConflictAction;
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.ConflictTarget.html
+ */
+export type ConflictTarget = {
+    Columns?: Ident[];
+    OnConstraint?: ObjectName;
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.OnConflictAction.html
+ */
+export type OnConflictAction = 'DoNothing' | {
+    DoUpdate?: DoUpdate;
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.DoUpdate.html
+ */
+export interface DoUpdate {
+    /**
+     * Column assignments
+     */
+    assignments: Assignment[];
+
+    /**
+     * WHERE
+     */
+    selection?: Expr;
+}
+
+/**
+ * SQL assignment `foo = expr` as used in SQLUpdate
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.Assignment.html
+ */
+export interface Assignment {
+    target: AssignmentTarget;
+    value: Expr;
+}
+
+/**
+ * Left-hand side of an assignment in an UPDATE statement, e.g. `foo` in `foo = 5` (ColumnName assignment) or `(a, b)` in `(a, b) = (1, 2)` (Tuple assignment).
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.AssignmentTarget.html
+ */
+export type AssignmentTarget = {
+    ColumnName?: ObjectName;
+    Tuple?: ObjectName[];
+}
 
 /**
  * A SQL query.

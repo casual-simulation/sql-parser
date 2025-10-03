@@ -4,6 +4,16 @@ import type { Keyword } from "./keyword";
 import type { Token } from "./token";
 
 /**
+ * Specifies Ignore / Respect NULL within window functions.
+ * For example `FIRST_VALUE(column2) IGNORE NULLS OVER (PARTITION BY column1)`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.NullTreatment.html
+ */
+export type NullTreatment = 
+    | 'IgnoreNulls'
+    | 'RespectNulls';
+
+/**
  * Simple SQL data types.
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DataType.html
