@@ -1,7 +1,39 @@
-import { parse_sql, format as format_sql, SQLVisitor } from '../pkg/sql_parser_wasm';
+import { parse_sql, format as format_sql, SQLVisitor as InternalSQLVisitor } from '../pkg/sql_parser_wasm';
 export * from './types';
 import initWasm, { InitInput, initSync } from '../pkg/sql_parser_wasm';
-import type { Span, Location, Statement } from './types';
+import type { Span, Location, Statement, Query, ObjectName, TableFactor, Expr, Value } from './types';
+
+export interface SQLVisitorConfig {
+    pre_visit_query?: (query: Query) => void;
+    post_visit_query?: (query: Query) => void;
+    
+    pre_visit_relation?:(relation: ObjectName) => void;
+    post_visit_relation?:(relation: ObjectName) => void;
+
+    pre_visit_table_factor?: (table_factor: TableFactor) => void;
+    post_visit_table_factor?: (table_factor: TableFactor) => void;
+
+    pre_visit_expr?: (expr: Expr) => void;
+    post_visit_expr?: (expr: Expr) => void;
+
+    pre_visit_statement?: (statement: Statement) => void;
+    post_visit_statement?: (statement: Statement) => void;
+
+    pre_visit_value?: (value: Value) => void;
+    post_visit_value?: (value: Value) => void;
+}
+
+export class SQLVisitor {
+    private _internalVisitor: InternalSQLVisitor;
+    
+    constructor(config: SQLVisitorConfig) {
+        this._internalVisitor = new InternalSQLVisitor(config);
+    }
+
+    visit(statement: Statement): void {
+        this._internalVisitor.visit(statement);
+    }
+}
 
 /**
  * Initializes the WASM module.
