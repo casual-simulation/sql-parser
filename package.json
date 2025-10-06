@@ -21,7 +21,8 @@
     "clean": "rimraf dist",
     "test": "wasm-pack test --node && pnpm test:js",
     "test:js": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:js:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll"
+    "test:js:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll",
+    "pretest": "pnpm build:js"
   },
   "keywords": [
     "sql",
