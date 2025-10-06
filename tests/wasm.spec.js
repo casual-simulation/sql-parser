@@ -1,4 +1,4 @@
-import { parse_sql, SQLVisitor, format, span, init } from '../dist/index';
+import { parse, SQLVisitor, format, span, init } from '../dist/index';
 import {jest} from '@jest/globals';
 
 beforeAll(async () => {
@@ -6,42 +6,42 @@ beforeAll(async () => {
 });
 
 it('should be able to parse some SQL', () => {
-    const result = parse_sql("generic", "SELECT * FROM users;");
+    const result = parse("SELECT * FROM users;");
 
     expect(result).toMatchSnapshot();
 });
 
 it('should be able to parse insert SQL', () => {
-    const result = parse_sql("generic", "INSERT INTO users (id, name) VALUES (1, 'Alice'), (2, 'Bob');");
+    const result = parse("INSERT INTO users (id, name) VALUES (1, 'Alice'), (2, 'Bob');");
 
     expect(result).toMatchSnapshot();
 });
 
 it('should be able to parse update SQL', () => {
-    const result = parse_sql("generic", "UPDATE users SET name = 'Charlie' WHERE id = 1;");
+    const result = parse("UPDATE users SET name = 'Charlie' WHERE id = 1;");
 
     expect(result).toMatchSnapshot();
 });
 
 it('should be able to parse delete SQL', () => {
-    const result = parse_sql("generic", "DELETE FROM users WHERE id = 2;");
+    const result = parse("DELETE FROM users WHERE id = 2;");
 
     expect(result).toMatchSnapshot();
 });
 
 it('should support parameterized queries', () => {
-    const result = parse_sql("generic", "SELECT * FROM users WHERE id = ?;");
+    const result = parse("SELECT * FROM users WHERE id = ?;");
 
     expect(result).toMatchSnapshot();
 });
 
 it('should be able to parse joins', () => {
-    const result = parse_sql("generic", "SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id;");
+    const result = parse("SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id;");
     expect(result).toMatchSnapshot();
 });
 
 it('should throw errors when parsing invalid SQL', () => {
-    expect(() => parse_sql("generic", "SELEC * FROM users;")).toThrow("sql parser error: Expected: an SQL statement, found: SELEC at Line: 1, Column: 1");
+    expect(() => parse("SELEC * FROM users;")).toThrow("sql parser error: Expected: an SQL statement, found: SELEC at Line: 1, Column: 1");
 });
 
 describe('visitor', () => {
@@ -90,7 +90,7 @@ describe('visitor', () => {
     });
 
     it('should call visitor methods when visiting a statement', () => {
-        const result = parse_sql("generic", "SELECT * FROM users;");
+        const result = parse("SELECT * FROM users;");
         expect(result.length).toBe(1);
         const statement = result[0];
 
@@ -109,7 +109,7 @@ describe('visitor', () => {
     });
 
     it('should call the statement visitors', () => {
-        const result = parse_sql("generic", "SELECT * FROM users;");
+        const result = parse("SELECT * FROM users;");
         expect(result.length).toBe(1);
         const statement = result[0];
 
@@ -122,7 +122,7 @@ describe('visitor', () => {
     });
 
     it('should call the query visitors', () => {
-        const result = parse_sql("generic", "SELECT * FROM users;");
+        const result = parse("SELECT * FROM users;");
         expect(result.length).toBe(1);
 
         const statement = result[0];
@@ -136,7 +136,7 @@ describe('visitor', () => {
     });
 
     it('should call the table factor visitors', () => {
-        const result = parse_sql("generic", "SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id;");
+        const result = parse("SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id;");
         expect(result.length).toBe(1);
 
         const statement = result[0];
@@ -212,7 +212,7 @@ describe('visitor', () => {
     });
 
     it('should call the relation visitors', () => {
-        const result = parse_sql("generic", "SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id;");
+        const result = parse("SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id;");
         expect(result.length).toBe(1);
 
         const statement = result[0];
@@ -248,7 +248,7 @@ describe('visitor', () => {
     });
 
     it('should call the value visitors', () => {
-        const result = parse_sql("generic", "INSERT INTO users (id, name) VALUES (1, 'Alice'), (2, 'Bob');");
+        const result = parse("INSERT INTO users (id, name) VALUES (1, 'Alice'), (2, 'Bob');");
         expect(result.length).toBe(1);
 
         const statement = result[0];
@@ -264,7 +264,7 @@ describe('visitor', () => {
     });
 
     it('should call the expr visitors', () => {
-        const result = parse_sql("generic", "SELECT * FROM users WHERE id = 1 AND name = 'Alice';");
+        const result = parse("SELECT * FROM users WHERE id = 1 AND name = 'Alice';");
         expect(result.length).toBe(1);
 
         const statement = result[0];
@@ -277,7 +277,7 @@ describe('visitor', () => {
 
 describe('format', () => {
     it('should be able to format some SQL', () => {
-        const result = parse_sql("generic", "SELECT * FROM users;");
+        const result = parse("SELECT * FROM users;");
 
         expect(result.length).toBe(1);
         const statement = result[0];
@@ -286,7 +286,7 @@ describe('format', () => {
     });
 
     it('should be able to format edited SQL', () => {
-        const result = parse_sql("generic", "SELECT * FROM users;");
+        const result = parse("SELECT * FROM users;");
 
         expect(result.length).toBe(1);
         const statement = result[0];
