@@ -6,6 +6,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist/**/*",
     "pkg/sql_parser_wasm_bg.wasm",
