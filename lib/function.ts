@@ -1,8 +1,8 @@
-import { NullTreatment } from "./data-type";
+import type { NullTreatment } from "./data-type";
 import type { Expr } from "./expr";
 import type { Ident, ObjectName } from "./ident";
-import { OrderByExpr, Query } from "./statement";
-import { Value } from "./token";
+import type { OrderByExpr, Query } from "./statement";
+import type { Value } from "./token";
 
 /**
  * A function call

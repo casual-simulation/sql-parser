@@ -1,6 +1,6 @@
-import { ColumnDef, ColumnOption, CommentDef, ConstraintCharacteristics, DataType, GeneratedAs, NullsDistinctOption, ReferentialAction, SequenceOptions, SqlOption } from "./data-type";
+import type { ColumnDef, ColumnOption, CommentDef, ConstraintCharacteristics, DataType, GeneratedAs, NullsDistinctOption, ReferentialAction, SequenceOptions, SqlOption } from "./data-type";
 import type { Expr, ExprWithAlias, OneOrManyWithParens } from "./expr";
-import { FunctionArg, NamedWindowDefinition, SQLFunction } from "./function";
+import type { FunctionArg, NamedWindowDefinition, SQLFunction } from "./function";
 import type { Ident, ObjectName, ObjectType } from "./ident";
 import type { AttachedToken, Value, ValueWithSpan } from "./token";
 

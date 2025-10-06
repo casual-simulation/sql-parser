@@ -1,4 +1,4 @@
-import { DataType } from "./data-type";
+import type { DataType } from "./data-type";
 import type { Keyword } from "./keyword";
 import type { Span } from "./span";
 
