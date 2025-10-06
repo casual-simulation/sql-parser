@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
   "files": [
-    "dist/",
+    "dist/**/*",
     "pkg/sql_parser_wasm_bg.wasm",
     "pkg/sql_parser_wasm.js",
     "pkg/sql_parser_wasm.d.ts",
