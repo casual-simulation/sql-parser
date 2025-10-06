@@ -173,9 +173,9 @@ export interface CreateTable {
     primary_key?: Expr,
     order_by?: OneOrManyWithParens<Expr>,
     partition_by?: Expr,
-    cluster_by?: WrappedCollection<Expr>,
-    clustered_by?: ClusteredBy,
-    inherits?: ObjectName,
+    cluster_by?: WrappedCollection<Expr[]>,
+    clustered_by?: unknown,
+    inherits?: ObjectName[],
     strict: boolean,
     copy_grants: boolean,
     enable_schema_evolution?: boolean,
@@ -184,19 +184,44 @@ export interface CreateTable {
     max_data_extension_time_in_days?: number,
     default_ddl_collation?: String,
     with_aggregation_policy?: ObjectName,
-    with_row_access_policy?: RowAccessPolicy,
-    with_tags?: Tag,
+    with_row_access_policy?: unknown,
+    with_tags?: unknown[],
     external_volume?: String,
     base_location?: String,
     catalog?: String,
     catalog_sync?: String,
-    storage_serialization_policy?: StorageSerializationPolicy,
+    storage_serialization_policy?: unknown,
     target_lag?: String,
     warehouse?: Ident,
-    refresh_mode?: RefreshModeKind,
-    initialize?: InitializeKind,
+    refresh_mode?: unknown,
+    initialize?: unknown,
     require_user: boolean,
 }
+
+/**
+ * Helper to indicate if a collection should be wrapped by a symbol in the display form.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.WrappedCollection.html
+ */
+export type WrappedCollection<T> = {
+    /**
+     * Print the collection without wrapping symbols, as `item, item, item`.
+     */
+    NoWrapping?: T;
+
+    /**
+     * Wraps the collection in Parentheses, as `(item, item, item)`.
+     */
+    Parenthesis?: T;
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.OnCommit.html
+ */
+export type OnCommit =
+    | 'DeleteRows'
+    | 'PreserveRows'
+    | 'Drop';
 
 /**
  * Specifies how to create a new table based on an existing table’s schema. 
@@ -323,7 +348,7 @@ export interface TableConstraint {
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.FileFormat.html
  */
-export type FileFormat = 
+export type FileFormat =
     | 'TEXTFILE'
     | 'SEQUENCEFILE'
     | 'ORC'
@@ -382,7 +407,7 @@ export type ReferentialAction =
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.KeyOrIndexDisplay.html
  */
-export type KeyOrIndexDisplay = 
+export type KeyOrIndexDisplay =
     | 'None'
     | 'Key'
     | 'Index';
@@ -392,7 +417,7 @@ export type KeyOrIndexDisplay =
  * 
  * This structure isn’t present on ANSI, but is found at least in MySQL `CREATE TABLE`, MySQL `CREATE INDEX`, and Postgresql `CREATE INDEX` statements.
  */
-export type IndexType = 
+export type IndexType =
     | 'BTree'
     | 'Hash'
     | 'GIN'
@@ -597,7 +622,7 @@ export interface Insert {
      * table_name as foo (for PostgreSQL)
      */
     table_alias?: Ident,
-    
+
     /**
      * COLUMNS
      */
@@ -687,7 +712,7 @@ export interface Insert {
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.SqliteOnConflict.html
  */
-export type SqliteOnConflict = 
+export type SqliteOnConflict =
     | 'Rollback'
     | 'Abort'
     | 'Fail'
@@ -938,7 +963,7 @@ export interface Offset {
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.OffsetRows.html
  */
-export type OffsetRows = 
+export type OffsetRows =
     | 'None'
     | 'Row'
     | 'Rows';
@@ -994,7 +1019,7 @@ export interface Cte {
 /**
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.CteAsMaterialized.html
  */
-export type CteAsMaterialized = 
+export type CteAsMaterialized =
     | 'Materialized'
     | 'NotMaterialized';
 
@@ -1040,7 +1065,7 @@ export interface SetExpr {
 /**
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.SetOperator.html
  */
-export type SetOperator = 
+export type SetOperator =
     | 'Union'
     | 'Except'
     | 'Intersect'
