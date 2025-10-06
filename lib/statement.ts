@@ -1,7 +1,7 @@
 import { ColumnDef, ColumnOption, CommentDef, DataType, GeneratedAs, NullsDistinctOption, SqlOption } from "./data-type";
 import type { Expr, ExprWithAlias, OneOrManyWithParens } from "./expr";
 import { FunctionArg, SQLFunction } from "./function";
-import type { Ident, ObjectName } from "./ident";
+import type { Ident, ObjectName, ObjectType } from "./ident";
 import type { AttachedToken, Value, ValueWithSpan } from "./token";
 
 /**
@@ -50,7 +50,16 @@ export type Statement = {
     CreateServer?: unknown;
     CreatePolicy?: unknown;
     CreateConnector?: unknown;
-    AlterTable?: unknown;
+    AlterTable?: {
+        name: ObjectName,
+        if_exists: boolean,
+        only: boolean,
+        operations: AlterTableOperation[],
+        location?: unknown,
+        on_cluster?: Ident,
+        iceberg: boolean,
+        end_token: AttachedToken,
+    };
     AlterSchema?: unknown;
     AlterIndex?: unknown;
     AlterView?: unknown;
@@ -62,7 +71,16 @@ export type Statement = {
     AttachDatabase?: unknown;
     AttachDuckDBDatabase?: unknown;
     DetachDuckDBDatabase?: unknown;
-    Drop?: unknown;
+    Drop?: {
+        object_type: ObjectType,
+        if_exists: boolean,
+        names: ObjectName[],
+        cascade: boolean,
+        restrict: boolean,
+        purge: boolean,
+        temporary: boolean,
+        table?: ObjectName,
+    };
     DropFunction?: unknown;
     DropDomain?: unknown;
     DropProcedure?: unknown;
@@ -89,10 +107,25 @@ export type Statement = {
     ShowViews?: unknown;
     ShowCollation?: unknown;
     Use?: unknown;
-    StartTransaction?: unknown;
+    StartTransaction?: {
+        modes: TransactionMode[],
+        begin: boolean,
+        transaction?: BeginTransactionKind,
+        modifier?: TransactionModifier,
+        statements: Statement[],
+        exception?: unknown[],
+        has_end_keyword: boolean,
+    };
     Comment?: unknown;
-    Commit?: unknown;
-    Rollback?: unknown;
+    Commit?: {
+        chain: boolean,
+        end: boolean,
+        modifier?: TransactionModifier,
+    };
+    Rollback?: {
+        chain: boolean,
+        savepoint?: Ident,
+    };
     CreateSchema?: unknown;
     CreateDatabase?: unknown;
     CreateFunction?: unknown;
@@ -138,6 +171,55 @@ export type Statement = {
     CreateUser?: unknown;
     Vacuum?: unknown;
 }
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TransactionMode.html
+ */
+export type TransactionMode = {
+    AccessMode?: TransactionAccessMode,
+    IsolationLevel?: TransactionIsolationLevel,
+}
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TransactionAccessMode.html
+ */
+export type TransactionAccessMode = 
+    | 'ReadOnly'
+    | 'ReadWrite';
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TransactionIsolationLevel.html
+ */
+export type TransactionIsolationLevel =
+    | 'ReadUncommitted'
+    | 'ReadCommitted'
+    | 'RepeatableRead'
+    | 'Serializable'
+    | 'Snapshot';
+
+/**
+ * Transaction started with `[ TRANSACTION | WORK ]`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.BeginTransactionKind.html
+ */
+export type BeginTransactionKind =
+    | 'Transaction'
+    | 'Work';
+
+/**
+ * Modifier for the transaction in the `BEGIN` syntax.
+ * 
+ * SQLite: https://sqlite.org/lang_transaction.html
+ * MS-SQL: https://learn.microsoft.com/en-us/sql/t-sql/language-elements/try-catch-transact-sql
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.TransactionModifier.html
+ */
+export type TransactionModifier = 
+    | 'Deferred'
+    | 'Immediate'
+    | 'Exclusive'
+    | 'Try'
+    | 'Catch';
 
 /**
  * A SQL `CREATE INDEX` statement.

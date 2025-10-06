@@ -36,3 +36,20 @@ export interface ObjectNamePartFunction {
     name: Ident;
     args: FunctionArg[];
 }
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.ObjectType.html
+ */
+export type ObjectType =
+    | 'Table'
+    | 'View'
+    | 'MaterializedView'
+    | 'Index'
+    | 'Schema'
+    | 'Database'
+    | 'Role'
+    | 'Sequence'
+    | 'Stage'
+    | 'Type'
+    | 'User'
+    | 'Stream';
