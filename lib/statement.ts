@@ -1,8 +1,8 @@
-import { ColumnDef, CommentDef, DataType, NullsDistinctOption, SqlOption } from "./data-type";
+import { ColumnDef, ColumnOption, CommentDef, DataType, GeneratedAs, NullsDistinctOption, SqlOption } from "./data-type";
 import type { Expr, ExprWithAlias, OneOrManyWithParens } from "./expr";
 import { FunctionArg, SQLFunction } from "./function";
 import type { Ident, ObjectName } from "./ident";
-import type { AttachedToken, Value } from "./token";
+import type { AttachedToken, Value, ValueWithSpan } from "./token";
 
 /**
  * The list of possible SQL statements.
@@ -44,7 +44,7 @@ export type Statement = {
     CreateView?: unknown;
     CreateTable?: CreateTable;
     CreateVirtualTable?: unknown;
-    CreateIndex?: unknown;
+    CreateIndex?: CreateIndex;
     CreateRole?: unknown;
     CreateSecret?: unknown;
     CreateServer?: unknown;
@@ -58,7 +58,7 @@ export type Statement = {
     AlterRole?: unknown;
     AlterPolicy?: unknown;
     AlterConnector?: unknown;
-    AlterSession ?: unknown;
+    AlterSession?: unknown;
     AttachDatabase?: unknown;
     AttachDuckDBDatabase?: unknown;
     DetachDuckDBDatabase?: unknown;
@@ -81,8 +81,8 @@ export type Statement = {
     ShowVariables?: unknown;
     ShowCreate?: unknown;
     ShowColumns?: unknown;
-    ShowDatabases ?: unknown;
-    ShowSchemas ?: unknown;
+    ShowDatabases?: unknown;
+    ShowSchemas?: unknown;
     ShowCharset?: unknown;
     ShowObjects?: unknown;
     ShowTables?: unknown;
@@ -137,6 +137,318 @@ export type Statement = {
     ExportData?: unknown;
     CreateUser?: unknown;
     Vacuum?: unknown;
+}
+
+/**
+ * A SQL `CREATE INDEX` statement.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.CreateIndex.html
+ */
+export interface CreateIndex {
+    name?: ObjectName,
+    table_name: ObjectName,
+    using?: IndexType,
+    columns: IndexColumn[],
+    unique: boolean,
+    concurrently: boolean,
+    if_not_exists: boolean,
+    include: Ident[],
+    nulls_distinct?: boolean,
+    with: Expr[],
+    predicate?: Expr,
+    index_options: IndexOption[],
+    alter_options: AlterTableOperation[],
+}
+
+/**
+ * An `ALTER TABLE` operation
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.AlterTableOperation.html
+ */
+export type AlterTableOperation =
+    | 'DisableRowLevelSecurity'
+    | 'EnableRowLevelSecurity'
+    | 'DropClusteringKey'
+    | 'SuspendRecluster'
+    | 'ResumeRecluster' | {
+        AddConstraint?: {
+            constraint: TableConstraint,
+            not_valid: boolean,
+        },
+        AddColumn?: {
+            column_keyword: boolean,
+            if_not_exists: boolean,
+            column_def: ColumnDef,
+            column_position?: MySQLColumnPosition,
+        },
+        AddProjection?: {
+            if_not_exists: boolean,
+            name: Ident,
+            select: unknown, // TODO: Define proper type
+        },
+        DropProjection?: {
+            if_exists: boolean,
+            name: Ident,
+        },
+        MaterializeProjection?: {
+            if_exists: boolean,
+            name: Ident,
+            partition?: Ident,
+        },
+        ClearProjection?: {
+            if_exists: boolean,
+            name: Ident,
+            partition?: Ident,
+        },
+        DisableRule?: {
+            name: Ident,
+        },
+        DisableTrigger?: {
+            name: Ident,
+        },
+        DropConstraint?: {
+            if_exists: boolean,
+            name: Ident,
+            drop_behavior?: DropBehavior,
+        },
+        DropColumn?: {
+            has_column_keyword: boolean,
+            column_names: Ident[],
+            if_exists: boolean,
+            drop_behavior?: DropBehavior,
+        },
+        AttachPartition?: {
+            partition: unknown,
+        },
+        DetachPartition?: {
+            partition: unknown,
+        },
+        FreezePartition?: {
+            partition: unknown,
+            with_name?: Ident,
+        },
+        UnfreezePartition?: {
+            partition: unknown,
+            with_name?: Ident,
+        },
+        DropPrimaryKey?: {
+            drop_behavior?: DropBehavior,
+        },
+        DropForeignKey?: {
+            name: Ident,
+            drop_behavior?: DropBehavior,
+        },
+        DropIndex?: {
+            name: Ident,
+        },
+        EnableAlwaysRule?: {
+            name: Ident,
+        },
+        EnableAlwaysTrigger?: {
+            name: Ident,
+        },
+        EnableReplicaRule?: {
+            name: Ident,
+        },
+        EnableReplicaTrigger?: {
+            name: Ident,
+        },
+        EnableRule?: {
+            name: Ident,
+        },
+        EnableTrigger?: {
+            name: Ident,
+        },
+        RenamePartitions?: {
+            old_partitions: Expr[],
+            new_partitions: Expr[],
+        },
+        ReplicaIdentity?: {
+            identity: ReplicaIdentity,
+        },
+        AddPartitions?: {
+            if_not_exists: boolean,
+            new_partitions: unknown[],
+        },
+        DropPartitions?: {
+            partitions: Expr[],
+            if_exists: boolean,
+        },
+        RenameColumn?: {
+            old_column_name: Ident,
+            new_column_name: Ident,
+        },
+        RenameTable?: {
+            table_name: RenameTableNameKind,
+        },
+        ChangeColumn?: {
+            old_name: Ident,
+            new_name: Ident,
+            data_type: DataType,
+            options: ColumnOption[],
+            column_position?: MySQLColumnPosition,
+        },
+        ModifyColumn?: {
+            col_name: Ident,
+            data_type: DataType,
+            options: ColumnOption[],
+            column_position?: MySQLColumnPosition,
+        },
+        RenameConstraint?: {
+            old_name: Ident,
+            new_name: Ident,
+        },
+        AlterColumn?: {
+            column_name: Ident,
+            op: AlterColumnOperation,
+        },
+        SwapWith?: {
+            table_name: ObjectName,
+        },
+        SetTblProperties?: {
+            table_properties: SqlOption[],
+        },
+        OwnerTo?: {
+            new_owner: Owner,
+        },
+        ClusterBy?: {
+            exprs: Expr[],
+        },
+        Algorithm?: {
+            equals: boolean,
+            algorithm: AlterTableAlgorithm,
+        },
+        Lock?: {
+            equals: boolean,
+            lock: AlterTableLock,
+        },
+        AutoIncrement?: {
+            equals: boolean,
+            value: ValueWithSpan,
+        },
+        ValidateConstraint?: {
+            name: Ident,
+        },
+        SetOptionsParens?: {
+            options: SqlOption[],
+        },
+    }
+
+/**
+ * [MySQL](https://dev.mysql.com/doc/refman/8.4/en/alter-table.html) ALTER TABLE lock.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.AlterTableLock.html
+ */
+export type AlterTableLock =
+    | 'Default'
+    | 'None'
+    | 'Shared'
+    | 'Exclusive';
+
+/**
+ * [MySQL](https://dev.mysql.com/doc/refman/8.4/en/alter-table.html) ALTER TABLE algorithm.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.AlterTableAlgorithm.html
+ */
+export type AlterTableAlgorithm = 
+    | 'Default'
+    | 'Instant'
+    | 'Inplace'
+    | 'Copy';
+
+/**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.Owner.html
+ */
+export type Owner = 
+    | 'CurrentRole'
+    | 'CurrentUser'
+    | 'SessionUser'
+    | {
+    Ident: Ident
+};
+
+/**
+ * MySQL `ALTER TABLE` only `[FIRST | AFTER column_name]`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.MySQLColumnPosition.html
+ */
+export type MySQLColumnPosition =
+    | 'First'
+    | { After: Ident }
+
+/**
+ * `<drop behavior> ::= CASCADE | RESTRICT`
+ * Used in DROP statements.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DropBehavior.html
+ */
+export type DropBehavior =
+    | 'Restrict'
+    | 'Cascade';
+
+/**
+ * ALTER TABLE operation `REPLICA IDENTITY` values See [Postgres ALTER TABLE docs](https://www.postgresql.org/docs/current/sql-altertable.html).
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.ReplicaIdentity.html
+ */
+export type ReplicaIdentity =
+    | 'None'
+    | 'Full'
+    | 'Default'
+    | { Index: Ident }
+
+/**
+ * RenameTableNameKind is the kind used in an `ALTER TABLE _ RENAME` statement.
+ * 
+ * Note: [MySQL](https://dev.mysql.com/doc/refman/8.4/en/alter-table.html) is the only database that supports the AS keyword for this operation.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.RenameTableNameKind.html
+ */
+export type RenameTableNameKind = {
+    As?: ObjectName;
+    To?: ObjectName;
+}
+
+/**
+ * An `ALTER COLUMN` operation.
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.AlterColumnOperation.html
+ */
+export type AlterColumnOperation =
+    | 'SetNotNull'
+    | 'DropNotNull'
+    | 'DropDefault'
+    | {
+    SetDefault?: {
+        value: Expr,
+    },
+    SetDataType?: {
+    data_type: DataType,
+        using?: Expr,
+        had_set: boolean,
+    },
+    AddGenerated?: {
+        generated_as?: GeneratedAs,
+        sequence_options?: SequenceOptions[],
+    },
+}
+
+/**
+ * ```sql
+ * [ INCREMENT [ BY ] increment ]
+    [ MINVALUE minvalue | NO MINVALUE ] [ MAXVALUE maxvalue | NO MAXVALUE ]
+    [ START [ WITH ] start ] [ CACHE cache ] [ [ NO ] CYCLE ]
+    ```
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.SequenceOptions.html
+ */
+export type SequenceOptions = {
+    IncrementBy?: [Expr, boolean],
+    MinValue?: Expr,
+    MaxValue?: Expr,
+    StartWith?: [Expr, boolean],
+    Cache?: Expr,
+    Cycle?: boolean,
 }
 
 /**
