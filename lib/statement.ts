@@ -1,6 +1,6 @@
-import { ColumnDef, ColumnOption, CommentDef, DataType, GeneratedAs, NullsDistinctOption, SqlOption } from "./data-type";
+import { ColumnDef, ColumnOption, CommentDef, ConstraintCharacteristics, DataType, GeneratedAs, NullsDistinctOption, ReferentialAction, SequenceOptions, SqlOption } from "./data-type";
 import type { Expr, ExprWithAlias, OneOrManyWithParens } from "./expr";
-import { FunctionArg, SQLFunction } from "./function";
+import { FunctionArg, NamedWindowDefinition, SQLFunction } from "./function";
 import type { Ident, ObjectName, ObjectType } from "./ident";
 import type { AttachedToken, Value, ValueWithSpan } from "./token";
 
@@ -515,23 +515,7 @@ export type AlterColumnOperation =
     },
 }
 
-/**
- * ```sql
- * [ INCREMENT [ BY ] increment ]
-    [ MINVALUE minvalue | NO MINVALUE ] [ MAXVALUE maxvalue | NO MAXVALUE ]
-    [ START [ WITH ] start ] [ CACHE cache ] [ [ NO ] CYCLE ]
-    ```
- * 
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.SequenceOptions.html
- */
-export type SequenceOptions = {
-    IncrementBy?: [Expr, boolean],
-    MinValue?: Expr,
-    MaxValue?: Expr,
-    StartWith?: [Expr, boolean],
-    Cache?: Expr,
-    Cycle?: boolean,
-}
+
 
 /**
  * SQL `CREATE TABLE` statement.
@@ -750,49 +734,6 @@ export type FileFormat =
     | 'AVRO'
     | 'RCFILE'
     | 'JSONFILE';
-
-/**
- * `<constraint_characteristics> = [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] [ ENFORCED | NOT ENFORCED ]`
- * 
- * Used in UNIQUE and foreign key constraints. The individual settings may occur in any order.
- * 
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.ConstraintCharacteristics.html
- */
-export interface ConstraintCharacteristics {
-    /**
-     * `[ DEFERRABLE | NOT DEFERRABLE ]`
-     */
-    deferrable?: boolean,
-
-    /**
-     * `[ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]`
-     */
-    initially?: DeferrableInitial,
-
-    /**
-     * `[ ENFORCED | NOT ENFORCED ]`
-     */
-    enforced?: boolean,
-}
-
-/**
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DeferrableInitial.html
- */
-export type DeferrableInitial = 'Immediate' | 'Deferred';
-
-/**
- * `<referential_action> = { RESTRICT | CASCADE | SET NULL | NO ACTION | SET DEFAULT }`
- * 
- * Used in foreign key constraints in ON UPDATE and ON DELETE options.
- * 
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.ReferentialAction.html
- */
-export type ReferentialAction =
-    | 'Restrict'
-    | 'Cascade'
-    | 'SetNull'
-    | 'NoAction'
-    | 'SetDefault';
 
 /**
  * Representation whether a definition can can contains the KEY or INDEX keywords with the same meaning.
@@ -1898,45 +1839,6 @@ export type GroupByExpr = {
  */
 export type GroupByWithModifier = 'Rollup' | 'Cube' | 'Totals' | {
     GroupingSets: Expr;
-}
-
-/**
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.NamedWindowDefinition.html
- */
-export type NamedWindowDefinition = [Ident, NamedWindowExpr];
-
-/**
- * An expression used in a named window declaration.
- * 
- * `WINDOW mywindow AS [named_window_expr]`
- * 
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.NamedWindowExpr.html
- */
-export type NamedWindowExpr = {
-    NamedWindow?: Ident;
-    WindowSpec?: WindowSpec;
-};
-
-/**
- * A window specification (i.e. `OVER ([window_name] PARTITION BY .. ORDER BY .. etc.)`)
- * 
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.WindowSpec.html
- */
-export interface WindowSpec {
-    window_name?: Ident,
-    partition_by: Expr[],
-    order_by: OrderByExpr[],
-    window_frame?: WindowFrame,
-}
-
-/**
- * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.WindowFrame.html
- */
-export interface WindowFrame {
-    // TODO: Define proper types
-    units: unknown;
-    start_bound: unknown;
-    end_bound?: unknown;
 }
 
 /**

@@ -372,14 +372,34 @@ export type ColumnOption = 'Null' | 'NotNull' | {
 }
 
 /**
- * ```
- * <constraint_characteristics> = [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] [ ENFORCED | NOT ENFORCED ]
- * ```
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.DeferrableInitial.html
+ */
+export type DeferrableInitial = 'Immediate' | 'Deferred';
+
+/**
+ * `<constraint_characteristics> = [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] [ ENFORCED | NOT ENFORCED ]`
+ * 
  * Used in UNIQUE and foreign key constraints. The individual settings may occur in any order.
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.ConstraintCharacteristics.html
  */
-export type ConstraintCharacteristics = any; // TODO: types
+export interface ConstraintCharacteristics {
+    /**
+     * `[ DEFERRABLE | NOT DEFERRABLE ]`
+     */
+    deferrable?: boolean,
+
+    /**
+     * `[ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]`
+     */
+    initially?: DeferrableInitial,
+
+    /**
+     * `[ ENFORCED | NOT ENFORCED ]`
+     */
+    enforced?: boolean,
+}
+
 
 /**
  * ```
@@ -408,11 +428,11 @@ export type GeneratedAs =
     | 'ExpStored';
 
 /**
- * ```
+ * ```sql
  * [ INCREMENT [ BY ] increment ]
     [ MINVALUE minvalue | NO MINVALUE ] [ MAXVALUE maxvalue | NO MAXVALUE ]
     [ START [ WITH ] start ] [ CACHE cache ] [ [ NO ] CYCLE ]
-     ```
+    ```
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.SequenceOptions.html
  */

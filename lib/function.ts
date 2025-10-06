@@ -28,6 +28,23 @@ export type WindowType = {
 }
 
 /**
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.NamedWindowDefinition.html
+ */
+export type NamedWindowDefinition = [Ident, NamedWindowExpr];
+
+/**
+ * An expression used in a named window declaration.
+ * 
+ * `WINDOW mywindow AS [named_window_expr]`
+ * 
+ * @see https://docs.rs/sqlparser/latest/sqlparser/ast/enum.NamedWindowExpr.html
+ */
+export type NamedWindowExpr = {
+    NamedWindow?: Ident;
+    WindowSpec?: WindowSpec;
+};
+
+/**
  * A window specification (i.e. `OVER ([window_name] PARTITION BY .. ORDER BY .. etc.)`)
  * 
  * @see https://docs.rs/sqlparser/latest/sqlparser/ast/struct.WindowSpec.html
